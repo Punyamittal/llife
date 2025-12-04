@@ -1,16 +1,27 @@
 import { Post, TrendingPost, Category } from "@/types/post";
+import { 
+  Flame, 
+  Newspaper, 
+  Building2, 
+  BookOpen, 
+  Calendar, 
+  MessageSquare, 
+  Users, 
+  Briefcase 
+} from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 const now = new Date();
 
-export const categories: { id: Category; label: string; icon: string }[] = [
-  { id: "all", label: "All Posts", icon: "🔥" },
-  { id: "news", label: "News", icon: "📰" },
-  { id: "campus-updates", label: "Campus Updates", icon: "🏛️" },
-  { id: "academics", label: "Academics", icon: "📚" },
-  { id: "events", label: "Events", icon: "🎉" },
-  { id: "confessions", label: "Confessions", icon: "💬" },
-  { id: "clubs", label: "Clubs", icon: "🎯" },
-  { id: "placements", label: "Placements", icon: "💼" },
+export const categories: { id: Category; label: string; icon: LucideIcon }[] = [
+  { id: "all", label: "All Posts", icon: Flame },
+  { id: "news", label: "News", icon: Newspaper },
+  { id: "campus-updates", label: "Campus Updates", icon: Building2 },
+  { id: "academics", label: "Academics", icon: BookOpen },
+  { id: "events", label: "Events", icon: Calendar },
+  { id: "Gossips", label: "Gossips", icon: MessageSquare },
+  { id: "clubs", label: "Clubs", icon: Users },
+  { id: "placements", label: "Placements", icon: Briefcase },
 ];
 
 export const mockPosts: Post[] = [
@@ -59,7 +70,7 @@ export const mockPosts: Post[] = [
     username: "AnonymousPanda",
     avatarInitial: "A",
     avatarColor: "bg-pink-600",
-    category: "confessions",
+    category: "Gossips",
     timestamp: new Date(now.getTime() - 3600000 * 12),
     upvotes: 89,
     downvotes: 5,

@@ -1,4 +1,4 @@
-import { TrendingUp, AlertCircle, Users, FileText } from "lucide-react";
+import { TrendingUp, AlertCircle, ShieldCheck } from "lucide-react";
 import { TrendingPost, Category } from "@/types/post";
 import { categories, guidelines } from "@/data/forumData";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ const categoryColors: Record<Category, string> = {
   "campus-updates": "bg-orange-500/20 text-orange-400",
   academics: "bg-emerald-500/20 text-emerald-400",
   events: "bg-pink-500/20 text-pink-400",
-  confessions: "bg-purple-500/20 text-purple-400",
+  Gossips: "bg-purple-500/20 text-purple-400",
   clubs: "bg-cyan-500/20 text-cyan-400",
   placements: "bg-amber-500/20 text-amber-400",
 };
@@ -23,30 +23,6 @@ const categoryColors: Record<Category, string> = {
 const Sidebar = ({ onlineCount, postsToday, trending }: SidebarProps) => {
   return (
     <aside className="w-80 shrink-0 space-y-4">
-      {/* Live Stats */}
-      <div className="bg-card border border-border rounded-xl p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="w-2 h-2 bg-online rounded-full animate-pulse" />
-          <span className="text-sm font-medium text-online">Live</span>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Users className="w-4 h-4" />
-              <span className="text-xs">Online</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{onlineCount}</p>
-          </div>
-          <div>
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <FileText className="w-4 h-4" />
-              <span className="text-xs">Posts Today</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{postsToday}</p>
-          </div>
-        </div>
-      </div>
-
       {/* Trending */}
       <div className="bg-card border border-border rounded-xl p-4">
         <div className="flex items-center gap-2 mb-4">
@@ -95,7 +71,7 @@ const Sidebar = ({ onlineCount, postsToday, trending }: SidebarProps) => {
         <ul className="space-y-2">
           {guidelines.map((rule, i) => (
             <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-              <span className="text-destructive mt-1">•</span>
+              <ShieldCheck className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
               <span>{rule}</span>
             </li>
           ))}

@@ -1,8 +1,9 @@
 import { formatDistanceToNow } from "date-fns";
-import { ChevronUp, ChevronDown, MessageCircle, Share2, MoreHorizontal } from "lucide-react";
+import { ChevronUp, ChevronDown, MessageCircle, Share2, MoreHorizontal, FileText } from "lucide-react";
 import { Post, Category } from "@/types/post";
 import { categories } from "@/data/forumData";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface PostCardProps {
   post: Post;
@@ -16,7 +17,7 @@ const categoryColors: Record<Category, string> = {
   "campus-updates": "bg-orange-500/20 text-orange-400",
   academics: "bg-emerald-500/20 text-emerald-400",
   events: "bg-pink-500/20 text-pink-400",
-  confessions: "bg-purple-500/20 text-purple-400",
+  Gossips: "bg-purple-500/20 text-purple-400",
   clubs: "bg-cyan-500/20 text-cyan-400",
   placements: "bg-amber-500/20 text-amber-400",
 };
@@ -25,6 +26,32 @@ const PostCard = ({ post, onVote, isNew = false }: PostCardProps) => {
   const category = categories.find((c) => c.id === post.category);
   const timeAgo = formatDistanceToNow(post.timestamp, { addSuffix: true });
   const score = post.upvotes - post.downvotes;
+  const { toast } = useToast();
+
+  const handleShare = async () => {
+    const postUrl = `${window.location.origin}${window.location.pathname}?post=${post.id}`;
+    
+    // Try Web Share API first (mobile devices)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Post by ${post.username}`,
+          text: post.content.substring(0, 100) + (post.content.length > 100 ? '...' : ''),
+          url: postUrl,
+        });
+        return;
+      } catch (error) {
+        // User cancelled or error occurred, fall through to clipboard
+      }
+    }
+
+    // Fallback to clipboard
+    try {
+      await navigator.clipboard.writeText(postUrl);
+    } catch (error) {
+      // Silently fail
+    }
+  };
 
   return (
     <article
@@ -42,7 +69,7 @@ const PostCard = ({ post, onVote, isNew = false }: PostCardProps) => {
               categoryColors[post.category]
             )}
           >
-            <span>{category?.icon}</span>
+            {category?.icon && <category.icon className="w-3.5 h-3.5" />}
             {category?.label}
           </span>
           <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -69,9 +96,12 @@ const PostCard = ({ post, onVote, isNew = false }: PostCardProps) => {
       </div>
 
       {/* Content */}
-      <p className="text-foreground text-[15px] leading-relaxed mb-4 whitespace-pre-wrap">
-        {post.content}
-      </p>
+      <div className="flex items-start gap-2 mb-4">
+        <FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+        <p className="text-foreground text-[15px] leading-relaxed whitespace-pre-wrap flex-1">
+          {post.content}
+        </p>
+      </div>
 
       {/* Actions */}
       <div className="flex items-center justify-between">
@@ -118,7 +148,10 @@ const PostCard = ({ post, onVote, isNew = false }: PostCardProps) => {
         </div>
 
         {/* Share */}
-        <button className="flex items-center gap-1.5 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors">
+        <button 
+          onClick={handleShare}
+          className="flex items-center gap-1.5 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+        >
           <Share2 className="w-4 h-4" />
           <span className="text-sm hidden sm:inline">Share</span>
         </button>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ChatMessage, User, Comment, TrendingMessage } from "@/types/chat";
 import { Category } from "@/types/post";
-import { categories } from "@/data/forumData";
+import { categories, guidelines } from "@/data/forumData";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Users, MessageCircle, Sparkles, Search, ChevronUp, ChevronDown, TrendingUp, MoreHorizontal, Flag, AlertTriangle } from "lucide-react";
+import { Send, Users, MessageCircle, Search, ChevronUp, ChevronDown, TrendingUp, MoreHorizontal, Flag, AlertTriangle, Flame, AlertCircle, Plus, ShieldCheck, Share2 } from "lucide-react";
+import { ChatSkeleton } from "@/components/ui/chat-skeleton";
+import NewPostModal from "@/components/forum/NewPostModal";
 import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -71,7 +73,6 @@ export default function ChatRoom() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [user, setUser] = useState<User | null>(null);
-  const [input, setInput] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category>("all");
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
@@ -82,6 +83,8 @@ export default function ChatRoom() {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [messageToReport, setMessageToReport] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [newPostModalOpen, setNewPostModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const sessionIdRef = useRef<string>("");
@@ -216,6 +219,7 @@ export default function ChatRoom() {
               commentCount: commentCounts[msg.id] || 0,
             }));
           setMessages(formattedMessages);
+          if (mounted) setIsLoading(false);
         }
 
         // Fetch comments for all messages
@@ -486,6 +490,7 @@ export default function ChatRoom() {
         };
       } catch (error) {
         console.error('Error initializing chat:', error);
+        if (mounted) setIsLoading(false);
       }
     }
 
@@ -504,27 +509,32 @@ export default function ChatRoom() {
     }
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || !user) return;
-
-    const messageContent = input.trim();
-    setInput("");
+  const handleNewPost = async (content: string, category: Category) => {
+    if (!content.trim() || !user) return;
 
     try {
       const { error } = await supabase.from('messages').insert({
         username: user.username,
-        content: messageContent,
+        content: content.trim(),
         avatar_color: user.avatarColor,
-        category: activeCategory,
+        category: category,
       });
 
       if (error) {
-        console.error('Error sending message:', error);
-        setInput(messageContent);
+        console.error('Error creating post:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create post. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error('Error sending message:', error);
-      setInput(messageContent);
+      console.error('Error creating post:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -743,12 +753,6 @@ export default function ChatRoom() {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
 
   const getInitials = (username: string) => {
     return username.substring(0, 2).toUpperCase();
@@ -762,15 +766,6 @@ export default function ChatRoom() {
     return matchesCategory && matchesSearch;
   });
 
-  const messagesToday = messages.filter((msg) => {
-    const msgDate = new Date(msg.timestamp);
-    const today = new Date();
-    return (
-      msgDate.getDate() === today.getDate() &&
-      msgDate.getMonth() === today.getMonth() &&
-      msgDate.getFullYear() === today.getFullYear()
-    );
-  }).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -778,16 +773,18 @@ export default function ChatRoom() {
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-display font-bold text-xl">
-              C
-            </div>
+            <img 
+              src="/favicon.jpg" 
+              alt="Vhisper Logo" 
+              className="w-20 h-20 rounded-xl object-cover"
+            />
             <div className="hidden sm:block">
               <h1 className="font-display font-bold text-lg leading-tight">
-                <span className="text-foreground">C</span>
-                <span className="text-primary">ampus Chat</span>
+                <span className="text-white">V</span>
+                <span className="text-red-500">hisper</span>
               </h1>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                Real-time Hub
+                DEVIL'S DEN
               </p>
             </div>
           </div>
@@ -805,10 +802,19 @@ export default function ChatRoom() {
             </div>
           </div>
 
-          <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 bg-accent/20 text-accent rounded-lg font-medium text-sm">
-            <Users className="w-4 h-4" />
-            <span className="hidden sm:inline">{onlineCount}+ online</span>
-            <span className="sm:hidden">{onlineCount}+</span>
+          <div className="shrink-0 flex items-center gap-2">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-accent/20 text-accent rounded-lg font-medium text-sm">
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">{onlineCount}+ online</span>
+              <span className="sm:hidden">{onlineCount}+</span>
+            </div>
+            <button
+              onClick={() => setNewPostModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 transition-all hover:scale-105 shadow-lg shadow-primary/25"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">New Post</span>
+            </button>
           </div>
         </div>
       </header>
@@ -816,7 +822,7 @@ export default function ChatRoom() {
       {/* Category Tabs */}
       <div className="sticky top-[65px] z-40 bg-background/95 backdrop-blur-md border-b border-border">
         <ScrollArea className="w-full">
-          <div className="flex items-center gap-2 px-4 py-3 min-w-max">
+          <div className="flex items-center justify-center gap-2 px-4 py-3">
             {categories.map((cat) => (
               <button
                 key={cat.id}
@@ -828,7 +834,7 @@ export default function ChatRoom() {
                     : "bg-secondary text-secondary-foreground hover:bg-muted"
                 )}
               >
-                <span>{cat.icon}</span>
+                <cat.icon className="w-4 h-4" />
                 <span>{cat.label}</span>
               </button>
             ))}
@@ -841,7 +847,9 @@ export default function ChatRoom() {
         <div className="flex gap-6">
           {/* Messages Feed */}
           <div className="flex-1 space-y-4 pb-20 lg:pb-6">
-            {filteredMessages.length > 0 ? (
+            {isLoading ? (
+              <ChatSkeleton count={5} />
+            ) : filteredMessages.length > 0 ? (
               filteredMessages.map((message) => {
                 const isOwnMessage = user && message.username === user.username;
                 const timeAgo = formatDistanceToNow(new Date(message.timestamp), { addSuffix: true });
@@ -880,11 +888,15 @@ export default function ChatRoom() {
                             message.category === 'campus-updates' && "bg-orange-500/20 text-orange-400",
                             message.category === 'academics' && "bg-emerald-500/20 text-emerald-400",
                             message.category === 'events' && "bg-pink-500/20 text-pink-400",
-                            message.category === 'confessions' && "bg-purple-500/20 text-purple-400",
+                            message.category === 'Gossips' && "bg-purple-500/20 text-purple-400",
                             message.category === 'clubs' && "bg-cyan-500/20 text-cyan-400",
                             message.category === 'placements' && "bg-amber-500/20 text-amber-400",
                           )}>
-                            <span>{categories.find(c => c.id === message.category)?.icon}</span>
+                            {(() => {
+                              const category = categories.find(c => c.id === message.category);
+                              const IconComponent = category?.icon;
+                              return IconComponent ? <IconComponent className="w-3.5 h-3.5" /> : null;
+                            })()}
                             {categories.find(c => c.id === message.category)?.label}
                           </span>
                         )}
@@ -907,7 +919,7 @@ export default function ChatRoom() {
                             <DropdownMenuItem
                               onClick={() => handleReportClick(message.id)}
                               disabled={reportedMessages.has(message.id)}
-                              className="text-destructive focus:text-destructive"
+                              className="text-destructive focus:text-destructive focus:bg-destructive/10 hover:bg-destructive/10 hover:text-destructive"
                             >
                               <Flag className="w-4 h-4 mr-2" />
                               {reportedMessages.has(message.id) ? "Already Reported" : "Report Message"}
@@ -968,6 +980,38 @@ export default function ChatRoom() {
                           <span className="text-sm">{message.commentCount || 0}</span>
                         </button>
                       </div>
+
+                      {/* Share */}
+                      <button 
+                        onClick={async () => {
+                          const messageUrl = `${window.location.origin}${window.location.pathname}?message=${message.id}`;
+                          
+                          // Try Web Share API first (mobile devices)
+                          if (navigator.share) {
+                            try {
+                              await navigator.share({
+                                title: `Message by ${message.username}`,
+                                text: message.content.substring(0, 100) + (message.content.length > 100 ? '...' : ''),
+                                url: messageUrl,
+                              });
+                              return;
+                            } catch (error) {
+                              // User cancelled or error occurred, fall through to clipboard
+                            }
+                          }
+
+                          // Fallback to clipboard
+                          try {
+                            await navigator.clipboard.writeText(messageUrl);
+                          } catch (error) {
+                            // Silently fail
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+                      >
+                        <Share2 className="w-4 h-4" />
+                        <span className="text-sm hidden sm:inline">Share</span>
+                      </button>
                     </div>
 
                     {/* Comments Section */}
@@ -1063,63 +1107,74 @@ export default function ChatRoom() {
           {/* Sidebar */}
           <div className="hidden lg:block">
             <div className="sticky top-[140px] space-y-4">
-              {/* Live Stats */}
-              <div className="bg-card border border-border rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-2 h-2 bg-online rounded-full animate-pulse" />
-                  <span className="text-sm font-medium text-online">Live</span>
-                </div>
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <Users className="w-4 h-4" />
-                      <span className="text-xs">Online Now</span>
-                    </div>
-                    <p className="text-2xl font-bold text-foreground">{onlineCount}</p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                      <MessageCircle className="w-4 h-4" />
-                      <span className="text-xs">Messages Today</span>
-                    </div>
-                    <p className="text-2xl font-bold text-foreground">{messagesToday}</p>
-                  </div>
-                </div>
-              </div>
-
               {/* Trending Topics */}
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="w-4 h-4 text-primary" />
-                  <span className="font-medium">Trending Topics</span>
+                  <span className="font-medium">Trending Now</span>
                 </div>
                 <div className="space-y-3">
                   {trendingMessages.length > 0 ? (
-                    trendingMessages.map((msg, index) => (
-                      <div
-                        key={msg.id}
-                        className="flex items-start gap-3 group cursor-pointer"
-                      >
-                        <span className="text-lg font-bold text-muted-foreground w-5 shrink-0">
-                          {index + 1}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                            {msg.content}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-muted-foreground">
-                              {msg.username}
-                            </span>
-                            <span className="text-[10px] text-primary">+{msg.likes} likes</span>
+                    trendingMessages.map((msg, index) => {
+                      const category = categories.find(c => c.id === msg.category || 'all');
+                      return (
+                        <div
+                          key={msg.id}
+                          className="flex items-start gap-3 group cursor-pointer"
+                        >
+                          <span className="text-lg font-bold text-foreground w-5 shrink-0">
+                            {index + 1}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Flame className="w-4 h-4 text-red-500" />
+                              <p className="text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                                {msg.content}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              {category && (
+                                <span className={cn(
+                                  "px-2 py-0.5 rounded text-[10px] font-medium",
+                                  msg.category === 'news' && "bg-blue-500/20 text-blue-400",
+                                  msg.category === 'campus-updates' && "bg-orange-500/20 text-orange-400",
+                                  msg.category === 'academics' && "bg-emerald-500/20 text-emerald-400",
+                                  msg.category === 'events' && "bg-pink-500/20 text-pink-400",
+                                  msg.category === 'confessions' && "bg-purple-500/20 text-purple-400",
+                                  msg.category === 'clubs' && "bg-cyan-500/20 text-cyan-400",
+                                  msg.category === 'placements' && "bg-amber-500/20 text-amber-400",
+                                )}>
+                                  {category.label}
+                                </span>
+                              )}
+                              <span className="text-[10px] text-red-500 font-medium">+{msg.likes}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <p className="text-sm text-muted-foreground">No trending topics yet</p>
                   )}
                 </div>
+              </div>
+
+              {/* Guidelines */}
+              <div className="bg-card border border-border rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
+                    <AlertCircle className="w-2.5 h-2.5 text-white" />
+                  </div>
+                  <span className="font-medium">Guidelines</span>
+                </div>
+                <ul className="space-y-2">
+                  {guidelines.map((rule, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                      <ShieldCheck className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                      <span>{rule}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               {/* User Info */}
@@ -1151,29 +1206,12 @@ export default function ChatRoom() {
         </div>
       </main>
 
-      {/* Input Area */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border px-4 py-3 z-40">
-        <div className="max-w-7xl mx-auto flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type a message..."
-            className="flex-1 bg-input border-border"
-            disabled={!user}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!input.trim() || !user}
-            size="default"
-            className="shrink-0 bg-accent text-accent-foreground hover:bg-accent/90 transition-all hover:scale-105 shadow-lg shadow-accent/20"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Send</span>
-            <Send className="w-4 h-4 sm:hidden" />
-          </Button>
-        </div>
-      </div>
+      {/* New Post Modal */}
+      <NewPostModal
+        isOpen={newPostModalOpen}
+        onClose={() => setNewPostModalOpen(false)}
+        onSubmit={handleNewPost}
+      />
 
       {/* Report Dialog */}
       <AlertDialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>

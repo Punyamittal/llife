@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { X, Send } from "lucide-react";
 import { Category } from "@/types/post";
 import { categories } from "@/data/forumData";
 import { cn } from "@/lib/utils";
+import { Send } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -39,24 +39,29 @@ const NewPostModal = ({ isOpen, onClose, onSubmit }: NewPostModalProps) => {
         <div className="space-y-4 pt-2">
           {/* Category Selection */}
           <div>
-            <label className="text-sm text-muted-foreground mb-2 block">
+            <label className="text-sm font-medium mb-3 block">
               Select Category
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {categories
                 .filter((c) => c.id !== "all")
+                .filter((c) => c.id === "news" || c.id === "campus-updates" || c.id === "academics" || c.id === "events" || c.id === "Gossips" || c.id === "clubs" || c.id === "placements")
+                .sort((a, b) => {
+                  const order = ["news", "campus-updates", "academics", "events", "Gossips", "clubs", "placements"];
+                  return order.indexOf(a.id) - order.indexOf(b.id);
+                })
                 .map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(cat.id)}
                     className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all",
                       selectedCategory === cat.id
                         ? "bg-primary text-primary-foreground"
                         : "bg-secondary text-secondary-foreground hover:bg-muted"
                     )}
                   >
-                    <span>{cat.icon}</span>
+                    <cat.icon className="w-3.5 h-3.5" />
                     <span>{cat.label}</span>
                   </button>
                 ))}
@@ -65,7 +70,7 @@ const NewPostModal = ({ isOpen, onClose, onSubmit }: NewPostModalProps) => {
 
           {/* Content */}
           <div>
-            <label className="text-sm text-muted-foreground mb-2 block">
+            <label className="text-sm font-medium mb-2 block">
               What's on your mind?
             </label>
             <textarea
@@ -78,15 +83,15 @@ const NewPostModal = ({ isOpen, onClose, onSubmit }: NewPostModalProps) => {
           </div>
 
           {/* Submit */}
-          <div className="flex items-center justify-between pt-2">
-            <p className="text-xs text-muted-foreground">
-              Posting as <span className="text-primary font-medium">Anonymous</span>
+          <div className="flex items-center justify-between pt-2 border-t border-border">
+            <p className="text-sm text-foreground">
+              Posting as <span className="font-medium">Anonymous</span>
             </p>
             <button
               onClick={handleSubmit}
               disabled={!content.trim()}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all",
+                "flex items-center gap-2 px-6 py-2 rounded-lg font-medium text-sm transition-all",
                 content.trim()
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : "bg-secondary text-muted-foreground cursor-not-allowed"

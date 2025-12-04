@@ -13,13 +13,15 @@ const Header = ({ onNewPost, searchQuery, onSearchChange }: HeaderProps) => {
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         {/* Logo */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-display font-bold text-xl">
-            V
-          </div>
+          <img 
+            src="/favicon.jpg" 
+            alt="Vhisper Logo" 
+            className="w-20 h-20 rounded-xl object-cover"
+          />
           <div className="hidden sm:block">
             <h1 className="font-display font-bold text-lg leading-tight">
-              <span className="text-foreground">V</span>
-              <span className="text-primary">hispers</span>
+              <span className="text-white">V</span>
+              <span className="text-red-500">hisper</span>
             </h1>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
               Campus Forum
@@ -33,7 +35,7 @@ const Header = ({ onNewPost, searchQuery, onSearchChange }: HeaderProps) => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search posts, topics, confessions..."
+              placeholder="Search posts, topics, Gossips..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full bg-input border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"

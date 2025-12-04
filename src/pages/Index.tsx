@@ -5,7 +5,7 @@ const Index = () => {
   return (
     <>
       <Helmet>
-        <title>Campus Chat Hub - Real-time Chat</title>
+        <title>Vhisper - Real-time Chat</title>
         <meta
           name="description"
           content="Real-time campus chat. Connect with your campus community instantly. No login required!"
