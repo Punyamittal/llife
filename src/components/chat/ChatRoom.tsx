@@ -63,8 +63,8 @@ function generateUsername() {
 }
 
 function generateAvatarColor() {
-  // Randomly select from d1 to d7 (d1-d6 are .webp, d7 is .jpg)
-  const avatarNumber = Math.floor(Math.random() * 7) + 1;
+  // Randomly select from d1 to d8 (d1-d6 and d8 are .webp, d7 is .jpg)
+  const avatarNumber = Math.floor(Math.random() * 8) + 1;
   const extension = avatarNumber === 7 ? 'jpg' : 'webp';
   return `/d${avatarNumber}.${extension}`;
 }
@@ -72,7 +72,7 @@ function generateAvatarColor() {
 function getAvatarFromUsername(username: string): string {
   // Generate consistent avatar based on username hash
   const hash = username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const avatarNumber = (hash % 7) + 1;
+  const avatarNumber = (hash % 8) + 1;
   const extension = avatarNumber === 7 ? 'jpg' : 'webp';
   return `/d${avatarNumber}.${extension}`;
 }
@@ -84,7 +84,7 @@ function getAvatarNumberFromPath(avatarPath: string): number {
 }
 
 function getAvatarColorScheme(avatarNumber: number) {
-  // Color schemes for each avatar (d1-d7)
+  // Color schemes for each avatar (d1-d8)
   const schemes: Record<number, {
     glow: { from: string; via: string; to: string };
     textShadow: string;
@@ -124,6 +124,11 @@ function getAvatarColorScheme(avatarNumber: number) {
       glow: { from: 'from-gray-500', via: 'via-gray-600', to: 'to-gray-500' },
       textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(107, 114, 128, 0.7), 0 0 20px rgba(75, 85, 99, 0.5)',
       boxShadow: '0 0 30px rgba(107, 114, 128, 0.8), 0 0 60px rgba(75, 85, 99, 0.6), 0 0 90px rgba(107, 114, 128, 0.4)'
+    },
+    8: {
+      glow: { from: 'from-stone-200', via: 'via-stone-100', to: 'to-stone-200' },
+      textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(245, 245, 244, 0.7), 0 0 20px rgba(231, 229, 228, 0.5)',
+      boxShadow: '0 0 30px rgba(245, 245, 244, 0.8), 0 0 60px rgba(231, 229, 228, 0.6), 0 0 90px rgba(245, 245, 244, 0.4)'
     }
   };
   return schemes[avatarNumber] || schemes[1];
@@ -156,6 +161,7 @@ export default function ChatRoom() {
   const [newPostModalOpen, setNewPostModalOpen] = useState(false);
   const [creatorDialogOpen, setCreatorDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [showAvatarSelection, setShowAvatarSelection] = useState(false);
   const [votingInProgress, setVotingInProgress] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -208,9 +214,25 @@ export default function ChatRoom() {
         }
 
         if (mounted && userData) {
+          // Normalize avatar path - convert old formats to new format if needed
+          let avatarPath = userData.avatar_color;
+          if (avatarPath && (avatarPath.startsWith('bg-') || !avatarPath.startsWith('/'))) {
+            // Old format - generate consistent avatar based on username hash
+            const hash = userData.username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+            const avatarNumber = (hash % 8) + 1;
+            const extension = avatarNumber === 7 ? 'jpg' : 'webp';
+            avatarPath = `/d${avatarNumber}.${extension}`;
+            
+            // Update database with normalized avatar
+            await supabase
+              .from('users')
+              .update({ avatar_color: avatarPath })
+              .eq('session_id', sessionId);
+          }
+          
           setUser({
             username: userData.username,
-            avatarColor: userData.avatar_color,
+            avatarColor: avatarPath || getAvatarFromUsername(userData.username),
           });
         }
 
@@ -283,7 +305,7 @@ export default function ChatRoom() {
               if (avatarPath && (avatarPath.startsWith('bg-') || !avatarPath.startsWith('/'))) {
                 // Old format - generate a random avatar based on username hash for consistency
                 const hash = msg.username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                const avatarNumber = (hash % 7) + 1;
+                const avatarNumber = (hash % 8) + 1;
                 const extension = avatarNumber === 7 ? 'jpg' : 'webp';
                 avatarPath = `/d${avatarNumber}.${extension}`;
               }
@@ -321,7 +343,7 @@ export default function ChatRoom() {
           let avatarPath = comment.avatar_color;
           if (avatarPath && (avatarPath.startsWith('bg-') || !avatarPath.startsWith('/'))) {
             const hash = comment.username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-            const avatarNumber = (hash % 7) + 1;
+            const avatarNumber = (hash % 8) + 1;
             const extension = avatarNumber === 7 ? 'jpg' : 'webp';
             avatarPath = `/d${avatarNumber}.${extension}`;
           }
@@ -386,7 +408,7 @@ export default function ChatRoom() {
                 let avatarPath = newMessage.avatar_color;
                 if (avatarPath && (avatarPath.startsWith('bg-') || !avatarPath.startsWith('/'))) {
                   const hash = newMessage.username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-                  const avatarNumber = (hash % 7) + 1;
+                  const avatarNumber = (hash % 8) + 1;
                   const extension = avatarNumber === 7 ? 'jpg' : 'webp';
                   avatarPath = `/d${avatarNumber}.${extension}`;
                 }
@@ -417,7 +439,7 @@ export default function ChatRoom() {
                 let avatarPath = newComment.avatar_color;
                 if (avatarPath && (avatarPath.startsWith('bg-') || !avatarPath.startsWith('/'))) {
                   const hash = newComment.username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-                  const avatarNumber = (hash % 7) + 1;
+                  const avatarNumber = (hash % 8) + 1;
                   const extension = avatarNumber === 7 ? 'jpg' : 'webp';
                   avatarPath = `/d${avatarNumber}.${extension}`;
                 }
@@ -883,6 +905,78 @@ export default function ChatRoom() {
   };
 
 
+  const handleAvatarChange = async (avatarPath: string) => {
+    if (!sessionIdRef.current || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ avatar_color: avatarPath })
+        .eq('session_id', sessionIdRef.current);
+
+      if (error) {
+        console.error('Error updating avatar:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update avatar. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local user state
+      setUser({
+        ...user,
+        avatarColor: avatarPath,
+      });
+
+      // Update all messages with this user's avatar
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.username === user.username
+            ? { ...msg, avatarColor: avatarPath }
+            : msg
+        )
+      );
+
+      // Update all comments with this user's avatar
+      setComments((prev) => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach((messageId) => {
+          updated[messageId] = updated[messageId].map((comment) =>
+            comment.username === user.username
+              ? { ...comment, avatarColor: avatarPath }
+              : comment
+          );
+        });
+        return updated;
+      });
+
+      // Update trending messages with this user's avatar
+      setTrendingMessages((prev) =>
+        prev.map((msg) =>
+          msg.username === user.username
+            ? { ...msg, avatarColor: avatarPath }
+            : msg
+        )
+      );
+
+      setShowAvatarSelection(false);
+      toast({
+        title: "Avatar Updated",
+        description: "Your avatar has been changed successfully.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update avatar. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getInitials = (username: string) => {
     return username.substring(0, 2).toUpperCase();
   };
@@ -1271,7 +1365,7 @@ export default function ChatRoom() {
           </div>
 
           {/* Sidebar */}
-          <div className="hidden lg:block">
+          <div className="hidden lg:block w-80 shrink-0">
             <div className="sticky top-[140px] space-y-4">
               {/* Trending Topics */}
               <div className="bg-card border border-border rounded-xl p-4">
@@ -1292,9 +1386,9 @@ export default function ChatRoom() {
                             {index + 1}
                           </span>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Flame className="w-4 h-4 text-red-500" />
-                              <p className="text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                            <div className="flex items-start gap-2 mb-1">
+                              <Flame className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                              <p className="text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2 overflow-hidden text-ellipsis">
                                 {msg.content}
                               </p>
                             </div>
@@ -1414,7 +1508,7 @@ export default function ChatRoom() {
 
       {/* Profile Dialog */}
       {user && (() => {
-        const avatarPath = getAvatarFromUsername(user.username);
+        const avatarPath = user.avatarColor || getAvatarFromUsername(user.username);
         const avatarNumber = getAvatarNumberFromPath(avatarPath);
         const colorScheme = getAvatarColorScheme(avatarNumber);
         const textColor = avatarNumber === 1 ? 'text-red-400' :
@@ -1423,10 +1517,18 @@ export default function ChatRoom() {
                          avatarNumber === 4 ? 'text-green-400' :
                          avatarNumber === 5 ? 'text-white' :
                          avatarNumber === 6 ? 'text-red-400' :
+                         avatarNumber === 7 ? 'text-gray-400' :
+                         avatarNumber === 8 ? 'text-blue-400' :
                          'text-gray-400';
         
         return (
-          <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+          <Dialog 
+            open={profileDialogOpen} 
+            onOpenChange={(open) => {
+              setProfileDialogOpen(open);
+              if (!open) setShowAvatarSelection(false);
+            }}
+          >
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className={`text-center text-xl font-bold ${textColor} uppercase tracking-wider`} style={{ fontFamily: 'monospace', letterSpacing: '0.2em', textShadow: colorScheme.textShadow }}>
@@ -1436,22 +1538,81 @@ export default function ChatRoom() {
               <div className="flex flex-col items-center gap-4 py-4">
                 <div className="relative">
                   <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${colorScheme.glow.from} ${colorScheme.glow.via} ${colorScheme.glow.to} opacity-75 blur-xl animate-pulse`}></div>
-                  <img
-                    src={avatarPath}
-                    alt={`${user.username} Avatar`}
-                    className="relative w-full max-w-xs h-auto rounded-2xl shadow-2xl object-cover"
-                    style={{
-                      boxShadow: colorScheme.boxShadow
-                    }}
-                    onError={(e) => {
-                      // Fallback to d1 if image fails to load
-                      const target = e.target as HTMLImageElement;
-                      if (!target.src.includes('d1.webp')) {
-                        target.src = '/d1.webp';
-                      }
-                    }}
-                  />
+                  <button
+                    onClick={() => setShowAvatarSelection(!showAvatarSelection)}
+                    className="relative group cursor-pointer"
+                  >
+                    <img
+                      src={avatarPath}
+                      alt={`${user.username} Avatar`}
+                      className="relative w-full max-w-xs h-auto rounded-2xl shadow-2xl object-cover transition-all group-hover:opacity-80 group-hover:scale-105"
+                      style={{
+                        boxShadow: colorScheme.boxShadow
+                      }}
+                      onError={(e) => {
+                        // Fallback to d1 if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        if (!target.src.includes('d1.webp')) {
+                          target.src = '/d1.webp';
+                        }
+                      }}
+                    />
+                    <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">Change Avatar</span>
+                    </div>
+                  </button>
                 </div>
+                
+                {/* Avatar Selection UI */}
+                {showAvatarSelection && (
+                  <div className="w-full mt-2 p-4 bg-secondary/50 rounded-xl border border-border">
+                    <p className="text-sm font-medium mb-3 text-center">Choose Your Avatar</p>
+                    <div className="grid grid-cols-4 gap-3">
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => {
+                        const extension = num === 7 ? 'jpg' : 'webp';
+                        const avatarPathOption = `/d${num}.${extension}`;
+                        const isSelected = user.avatarColor === avatarPathOption;
+                        const avatarNum = getAvatarNumberFromPath(avatarPathOption);
+                        const scheme = getAvatarColorScheme(avatarNum);
+                        
+                        return (
+                          <button
+                            key={num}
+                            onClick={() => handleAvatarChange(avatarPathOption)}
+                            className={cn(
+                              "relative aspect-square rounded-lg overflow-hidden transition-all hover:scale-110",
+                              isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                            )}
+                          >
+                            <div className={`absolute inset-0 bg-gradient-to-r ${scheme.glow.from} ${scheme.glow.via} ${scheme.glow.to} opacity-50 blur-sm`}></div>
+                            <img
+                              src={avatarPathOption}
+                              alt={`Avatar ${num}`}
+                              className="relative w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = '/d1.webp';
+                              }}
+                            />
+                            {isSelected && (
+                              <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                                  <span className="text-primary-foreground text-xs">✓</span>
+                                </div>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={() => setShowAvatarSelection(false)}
+                      className="w-full mt-3 px-4 py-2 text-sm bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
                 <div className="text-center">
                   <p className={`${textColor} text-sm sm:text-base font-medium uppercase tracking-wider mb-2`} style={{ fontFamily: 'monospace', letterSpacing: '0.15em', textShadow: colorScheme.textShadow }}>
                     {user.username}
