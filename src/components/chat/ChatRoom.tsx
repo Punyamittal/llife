@@ -22,8 +22,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Users, MessageCircle, Search, ChevronUp, ChevronDown, TrendingUp, MoreHorizontal, Flag, AlertTriangle, Flame, AlertCircle, Plus, ShieldCheck, Share2 } from "lucide-react";
+import { Send, Users, MessageCircle, Search, ChevronUp, ChevronDown, TrendingUp, MoreHorizontal, Flag, AlertTriangle, Flame, AlertCircle, Plus, ShieldCheck, Share2, User as UserIcon, ScrollText } from "lucide-react";
 import { ChatSkeleton } from "@/components/ui/chat-skeleton";
 import NewPostModal from "@/components/forum/NewPostModal";
 import { format, formatDistanceToNow } from "date-fns";
@@ -57,7 +63,70 @@ function generateUsername() {
 }
 
 function generateAvatarColor() {
-  return colors[Math.floor(Math.random() * colors.length)];
+  // Randomly select from d1 to d7 (d1-d6 are .webp, d7 is .jpg)
+  const avatarNumber = Math.floor(Math.random() * 7) + 1;
+  const extension = avatarNumber === 7 ? 'jpg' : 'webp';
+  return `/d${avatarNumber}.${extension}`;
+}
+
+function getAvatarFromUsername(username: string): string {
+  // Generate consistent avatar based on username hash
+  const hash = username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const avatarNumber = (hash % 7) + 1;
+  const extension = avatarNumber === 7 ? 'jpg' : 'webp';
+  return `/d${avatarNumber}.${extension}`;
+}
+
+function getAvatarNumberFromPath(avatarPath: string): number {
+  // Extract avatar number from path like "/d3.webp" or "/d7.jpg"
+  const match = avatarPath.match(/\/d(\d+)\./);
+  return match ? parseInt(match[1], 10) : 1;
+}
+
+function getAvatarColorScheme(avatarNumber: number) {
+  // Color schemes for each avatar (d1-d7)
+  const schemes: Record<number, {
+    glow: { from: string; via: string; to: string };
+    textShadow: string;
+    boxShadow: string;
+  }> = {
+    1: {
+      glow: { from: 'from-red-500', via: 'via-red-600', to: 'to-red-500' },
+      textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(239, 68, 68, 0.7), 0 0 20px rgba(220, 38, 38, 0.5)',
+      boxShadow: '0 0 30px rgba(239, 68, 68, 0.8), 0 0 60px rgba(220, 38, 38, 0.6), 0 0 90px rgba(239, 68, 68, 0.4)'
+    },
+    2: {
+      glow: { from: 'from-gray-500', via: 'via-gray-600', to: 'to-gray-500' },
+      textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(107, 114, 128, 0.7), 0 0 20px rgba(75, 85, 99, 0.5)',
+      boxShadow: '0 0 30px rgba(107, 114, 128, 0.8), 0 0 60px rgba(75, 85, 99, 0.6), 0 0 90px rgba(107, 114, 128, 0.4)'
+    },
+    3: {
+      glow: { from: 'from-purple-500', via: 'via-purple-600', to: 'to-purple-500' },
+      textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(168, 85, 247, 0.7), 0 0 20px rgba(147, 51, 234, 0.5)',
+      boxShadow: '0 0 30px rgba(168, 85, 247, 0.8), 0 0 60px rgba(147, 51, 234, 0.6), 0 0 90px rgba(168, 85, 247, 0.4)'
+    },
+    4: {
+      glow: { from: 'from-green-500', via: 'via-green-600', to: 'to-green-500' },
+      textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(34, 197, 94, 0.7), 0 0 20px rgba(22, 163, 74, 0.5)',
+      boxShadow: '0 0 30px rgba(34, 197, 94, 0.8), 0 0 60px rgba(22, 163, 74, 0.6), 0 0 90px rgba(34, 197, 94, 0.4)'
+    },
+    5: {
+      glow: { from: 'from-white', via: 'via-gray-200', to: 'to-white' },
+      textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 255, 255, 0.7), 0 0 20px rgba(229, 231, 235, 0.5)',
+      boxShadow: '0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px rgba(229, 231, 235, 0.6), 0 0 90px rgba(255, 255, 255, 0.4)'
+    },
+    6: {
+      glow: { from: 'from-red-500', via: 'via-red-600', to: 'to-red-500' },
+      textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(239, 68, 68, 0.7), 0 0 20px rgba(220, 38, 38, 0.5)',
+      boxShadow: '0 0 30px rgba(239, 68, 68, 0.8), 0 0 60px rgba(220, 38, 38, 0.6), 0 0 90px rgba(239, 68, 68, 0.4)'
+    },
+    7: {
+      glow: { from: 'from-gray-500', via: 'via-gray-600', to: 'to-gray-500' },
+      textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(107, 114, 128, 0.7), 0 0 20px rgba(75, 85, 99, 0.5)',
+      boxShadow: '0 0 30px rgba(107, 114, 128, 0.8), 0 0 60px rgba(75, 85, 99, 0.6), 0 0 90px rgba(107, 114, 128, 0.4)'
+    }
+  };
+  return schemes[avatarNumber] || schemes[1];
 }
 
 function getSessionId() {
@@ -85,6 +154,9 @@ export default function ChatRoom() {
   const [reportReason, setReportReason] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [newPostModalOpen, setNewPostModalOpen] = useState(false);
+  const [creatorDialogOpen, setCreatorDialogOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [votingInProgress, setVotingInProgress] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const sessionIdRef = useRef<string>("");
@@ -205,19 +277,30 @@ export default function ChatRoom() {
           }
 
           const formattedMessages = messagesData
-            .reverse()
-            .map((msg) => ({
-              id: msg.id,
-              username: msg.username,
-              content: msg.content,
-              avatarColor: msg.avatar_color,
-              timestamp: new Date(msg.created_at).getTime(),
-              category: (msg.category as Category) || 'all',
-              likes: votesByMessage[msg.id]?.likes || 0,
-              dislikes: votesByMessage[msg.id]?.dislikes || 0,
-              userVote: userVoteMap[msg.id] || null,
-              commentCount: commentCounts[msg.id] || 0,
-            }));
+            .map((msg) => {
+              // Convert old color-based avatars to image paths if needed
+              let avatarPath = msg.avatar_color;
+              if (avatarPath && (avatarPath.startsWith('bg-') || !avatarPath.startsWith('/'))) {
+                // Old format - generate a random avatar based on username hash for consistency
+                const hash = msg.username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const avatarNumber = (hash % 7) + 1;
+                const extension = avatarNumber === 7 ? 'jpg' : 'webp';
+                avatarPath = `/d${avatarNumber}.${extension}`;
+              }
+              
+              return {
+                id: msg.id,
+                username: msg.username,
+                content: msg.content,
+                avatarColor: avatarPath || '/d1.webp',
+                timestamp: new Date(msg.created_at).getTime(),
+                category: (msg.category as Category) || 'all',
+                likes: votesByMessage[msg.id]?.likes || 0,
+                dislikes: votesByMessage[msg.id]?.dislikes || 0,
+                userVote: userVoteMap[msg.id] || null,
+                commentCount: commentCounts[msg.id] || 0,
+              };
+            });
           setMessages(formattedMessages);
           if (mounted) setIsLoading(false);
         }
@@ -234,12 +317,21 @@ export default function ChatRoom() {
             if (!commentsByMessage[comment.message_id]) {
               commentsByMessage[comment.message_id] = [];
             }
-            commentsByMessage[comment.message_id].push({
+            // Convert old color-based avatars to image paths if needed
+          let avatarPath = comment.avatar_color;
+          if (avatarPath && (avatarPath.startsWith('bg-') || !avatarPath.startsWith('/'))) {
+            const hash = comment.username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+            const avatarNumber = (hash % 7) + 1;
+            const extension = avatarNumber === 7 ? 'jpg' : 'webp';
+            avatarPath = `/d${avatarNumber}.${extension}`;
+          }
+          
+          commentsByMessage[comment.message_id].push({
               id: comment.id,
               message_id: comment.message_id,
               username: comment.username,
               content: comment.content,
-              avatarColor: comment.avatar_color,
+              avatarColor: avatarPath || '/d1.webp',
               timestamp: new Date(comment.created_at).getTime(),
             });
           });
@@ -290,11 +382,20 @@ export default function ChatRoom() {
             async (payload) => {
               if (mounted) {
                 const newMessage = payload.new as any;
+                // Convert old color-based avatars to image paths if needed
+                let avatarPath = newMessage.avatar_color;
+                if (avatarPath && (avatarPath.startsWith('bg-') || !avatarPath.startsWith('/'))) {
+                  const hash = newMessage.username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+                  const avatarNumber = (hash % 7) + 1;
+                  const extension = avatarNumber === 7 ? 'jpg' : 'webp';
+                  avatarPath = `/d${avatarNumber}.${extension}`;
+                }
+                
                 const newMsg: ChatMessage = {
                   id: newMessage.id,
                   username: newMessage.username,
                   content: newMessage.content,
-                  avatarColor: newMessage.avatar_color,
+                  avatarColor: avatarPath || '/d1.webp',
                   timestamp: new Date(newMessage.created_at).getTime(),
                   category: (newMessage.category as Category) || 'all',
                   likes: 0,
@@ -302,7 +403,7 @@ export default function ChatRoom() {
                   userVote: null,
                   commentCount: 0,
                 };
-                setMessages((prev) => [...prev, newMsg]);
+                setMessages((prev) => [newMsg, ...prev]);
               }
             }
           )
@@ -312,12 +413,21 @@ export default function ChatRoom() {
             (payload) => {
               if (mounted) {
                 const newComment = payload.new as any;
+                // Convert old color-based avatars to image paths if needed
+                let avatarPath = newComment.avatar_color;
+                if (avatarPath && (avatarPath.startsWith('bg-') || !avatarPath.startsWith('/'))) {
+                  const hash = newComment.username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+                  const avatarNumber = (hash % 7) + 1;
+                  const extension = avatarNumber === 7 ? 'jpg' : 'webp';
+                  avatarPath = `/d${avatarNumber}.${extension}`;
+                }
+                
                 const comment: Comment = {
                   id: newComment.id,
                   message_id: newComment.message_id,
                   username: newComment.username,
                   content: newComment.content,
-                  avatarColor: newComment.avatar_color,
+                  avatarColor: avatarPath || '/d1.webp',
                   timestamp: new Date(newComment.created_at).getTime(),
                 };
                 setComments((prev) => ({
@@ -345,7 +455,7 @@ export default function ChatRoom() {
                 setMessages((prev) =>
                   prev.map((msg) => {
                     if (msg.id === newVote.message_id) {
-                      // Only increment if this is a new vote (not from current user's optimistic update)
+                      // Only update if this is not from current user (to avoid double-counting optimistic updates)
                       // For other users' votes, always increment
                       if (!isUserVote) {
                         return {
@@ -358,11 +468,14 @@ export default function ChatRoom() {
                             : (msg.dislikes || 0),
                         };
                       } else {
-                        // For current user, just update userVote (counts already updated optimistically)
-                        return {
-                          ...msg,
-                          userVote: newVote.vote_type as 'like' | 'dislike',
-                        };
+                        // For current user, ensure userVote matches (counts already updated optimistically)
+                        // Only update if userVote doesn't match to handle edge cases
+                        if (msg.userVote !== newVote.vote_type) {
+                          return {
+                            ...msg,
+                            userVote: newVote.vote_type as 'like' | 'dislike',
+                          };
+                        }
                       }
                     }
                     return msg;
@@ -503,11 +616,7 @@ export default function ChatRoom() {
     };
   }, []);
 
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+  // Removed auto-scroll since newest messages are now on top
 
   const handleNewPost = async (content: string, category: Category) => {
     if (!content.trim() || !user) return;
@@ -540,7 +649,10 @@ export default function ChatRoom() {
 
   const handleVote = async (messageId: string, voteType: 'like' | 'dislike') => {
     if (!sessionIdRef.current || !user) return;
-
+    
+    // Prevent multiple simultaneous votes on the same message
+    if (votingInProgress.has(messageId)) return;
+    
     const message = messages.find(m => m.id === messageId);
     if (!message) return;
 
@@ -555,6 +667,14 @@ export default function ChatRoom() {
       // Change vote or add new vote
       newVote = voteType;
     }
+
+    // Mark as voting in progress
+    setVotingInProgress(prev => new Set(prev).add(messageId));
+
+    // Store original state for rollback
+    const originalLikes = message.likes || 0;
+    const originalDislikes = message.dislikes || 0;
+    const originalUserVote = message.userVote;
 
     // Optimistic update - update UI immediately with correct counts
     setMessages((prev) =>
@@ -606,9 +726,9 @@ export default function ChatRoom() {
               if (msg.id === messageId) {
                 return {
                   ...msg,
-                  likes: message.likes || 0,
-                  dislikes: message.dislikes || 0,
-                  userVote: message.userVote,
+                  likes: originalLikes,
+                  dislikes: originalDislikes,
+                  userVote: originalUserVote,
                 };
               }
               return msg;
@@ -635,9 +755,9 @@ export default function ChatRoom() {
               if (msg.id === messageId) {
                 return {
                   ...msg,
-                  likes: message.likes || 0,
-                  dislikes: message.dislikes || 0,
-                  userVote: message.userVote,
+                  likes: originalLikes,
+                  dislikes: originalDislikes,
+                  userVote: originalUserVote,
                 };
               }
               return msg;
@@ -653,14 +773,23 @@ export default function ChatRoom() {
           if (msg.id === messageId) {
             return {
               ...msg,
-              likes: message.likes || 0,
-              dislikes: message.dislikes || 0,
-              userVote: message.userVote,
+              likes: originalLikes,
+              dislikes: originalDislikes,
+              userVote: originalUserVote,
             };
           }
           return msg;
         })
       );
+    } finally {
+      // Remove from voting in progress after a short delay to prevent rapid clicks
+      setTimeout(() => {
+        setVotingInProgress(prev => {
+          const next = new Set(prev);
+          next.delete(messageId);
+          return next;
+        });
+      }, 300);
     }
   };
 
@@ -771,15 +900,20 @@ export default function ChatRoom() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 shrink-0">
-            <img 
-              src="/favicon.jpg" 
-              alt="Vhisper Logo" 
-              className="w-20 h-20 rounded-xl object-cover"
-            />
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <button
+              onClick={() => setCreatorDialogOpen(true)}
+              className="hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              <img 
+                src="/favicon.jpg" 
+                alt="Vhisper Logo" 
+                className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-lg sm:rounded-xl object-cover"
+              />
+            </button>
             <div className="hidden sm:block">
-              <h1 className="font-display font-bold text-lg leading-tight">
+              <h1 className="font-display font-bold text-base sm:text-lg leading-tight">
                 <span className="text-white">V</span>
                 <span className="text-red-500">hisper</span>
               </h1>
@@ -789,30 +923,39 @@ export default function ChatRoom() {
             </div>
           </div>
 
-          <div className="flex-1 max-w-xl">
+          <div className="flex-1 min-w-0 max-w-xl">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search messages, users..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-input border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                className="w-full bg-input border border-border rounded-lg pl-8 sm:pl-10 pr-2 sm:pr-4 py-1.5 sm:py-2.5 text-xs sm:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
               />
             </div>
           </div>
 
-          <div className="shrink-0 flex items-center gap-2">
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-accent/20 text-accent rounded-lg font-medium text-sm">
-              <Users className="w-4 h-4" />
+          <div className="shrink-0 flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 bg-accent/20 text-accent rounded-lg font-medium text-xs sm:text-sm">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{onlineCount}+ online</span>
               <span className="sm:hidden">{onlineCount}+</span>
             </div>
+            {user && (
+              <button
+                onClick={() => setProfileDialogOpen(true)}
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 bg-secondary text-secondary-foreground rounded-lg font-medium text-xs sm:text-sm hover:bg-secondary/80 transition-all"
+              >
+                <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Profile</span>
+              </button>
+            )}
             <button
               onClick={() => setNewPostModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 transition-all hover:scale-105 shadow-lg shadow-primary/25"
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-xs sm:text-sm hover:bg-primary/90 transition-all hover:scale-105 shadow-lg shadow-primary/25"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">New Post</span>
             </button>
           </div>
@@ -820,21 +963,21 @@ export default function ChatRoom() {
       </header>
 
       {/* Category Tabs */}
-      <div className="sticky top-[65px] z-40 bg-background/95 backdrop-blur-md border-b border-border">
+      <div className="sticky top-[57px] sm:top-[65px] z-40 bg-background/95 backdrop-blur-md border-b border-border">
         <ScrollArea className="w-full">
-          <div className="flex items-center justify-center gap-2 px-4 py-3">
+          <div className="flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 overflow-x-auto">
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap",
+                  "flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap shrink-0",
                   activeCategory === cat.id
                     ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
                     : "bg-secondary text-secondary-foreground hover:bg-muted"
                 )}
               >
-                <cat.icon className="w-4 h-4" />
+                <cat.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>{cat.label}</span>
               </button>
             ))}
@@ -843,10 +986,10 @@ export default function ChatRoom() {
         </ScrollArea>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex gap-6">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
+        <div className="flex gap-4 sm:gap-6">
           {/* Messages Feed */}
-          <div className="flex-1 space-y-4 pb-20 lg:pb-6">
+          <div className="flex-1 space-y-3 sm:space-y-4 pb-20 lg:pb-6">
             {isLoading ? (
               <ChatSkeleton count={5} />
             ) : filteredMessages.length > 0 ? (
@@ -861,29 +1004,35 @@ export default function ChatRoom() {
                   <article
                     key={message.id}
                     className={cn(
-                      "bg-card border border-border rounded-xl p-4 transition-all duration-300 hover:border-primary/30",
+                      "bg-card border border-border rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all duration-300 hover:border-primary/30",
                       isOwnMessage && "bg-primary/5 border-primary/20"
                     )}
                   >
                     {/* Header */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={cn(
-                              "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white",
-                              message.avatarColor
-                            )}
-                          >
-                            {getInitials(message.username)}
-                          </div>
-                          <span className="text-sm font-medium text-primary">
+                    <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                          <img
+                            src={message.avatarColor || '/d1.webp'}
+                            alt={message.username}
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover shrink-0"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              // If avatar is not a valid image path, use default
+                              if (!target.src.includes('/d') || target.src.includes('bg-')) {
+                                target.src = '/d1.webp';
+                              } else if (!target.src.includes('d1.webp')) {
+                                target.src = '/d1.webp';
+                              }
+                            }}
+                          />
+                          <span className="text-xs sm:text-sm font-medium text-primary truncate">
                             {message.username}
                           </span>
                         </div>
                         {message.category && message.category !== 'all' && (
                           <span className={cn(
-                            "px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5",
+                            "px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded text-[10px] sm:text-xs font-medium flex items-center gap-1 sm:gap-1.5 shrink-0",
                             message.category === 'news' && "bg-blue-500/20 text-blue-400",
                             message.category === 'campus-updates' && "bg-orange-500/20 text-orange-400",
                             message.category === 'academics' && "bg-emerald-500/20 text-emerald-400",
@@ -895,24 +1044,25 @@ export default function ChatRoom() {
                             {(() => {
                               const category = categories.find(c => c.id === message.category);
                               const IconComponent = category?.icon;
-                              return IconComponent ? <IconComponent className="w-3.5 h-3.5" /> : null;
+                              return IconComponent ? <IconComponent className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : null;
                             })()}
-                            {categories.find(c => c.id === message.category)?.label}
+                            <span className="hidden min-[375px]:inline">{categories.find(c => c.id === message.category)?.label}</span>
                           </span>
                         )}
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <span className="w-1 h-1 bg-muted-foreground rounded-full" />
-                          {timeAgo}
+                        <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                          <span className="w-1 h-1 bg-muted-foreground rounded-full hidden sm:inline" />
+                          <span className="hidden sm:inline">{timeAgo}</span>
+                          <span className="sm:hidden">{format(new Date(message.timestamp), "HH:mm")}</span>
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
                           {format(new Date(message.timestamp), "HH:mm")}
                         </span>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
-                              <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                            <button className="p-1 sm:p-1.5 rounded-lg hover:bg-secondary transition-colors">
+                              <MoreHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -930,29 +1080,31 @@ export default function ChatRoom() {
                     </div>
 
                     {/* Content */}
-                    <p className="text-foreground text-[15px] leading-relaxed whitespace-pre-wrap mb-4">
+                    <p className="text-foreground text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap mb-3 sm:mb-4">
                       {message.content}
                     </p>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 sm:gap-4">
                         {/* Voting */}
-                        <div className="flex items-center gap-1 bg-secondary rounded-lg">
-                          <button
-                            onClick={() => handleVote(message.id, 'like')}
-                            className={cn(
-                              "p-2 rounded-l-lg transition-colors",
-                              message.userVote === 'like'
-                                ? "text-primary bg-primary/20"
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                            )}
-                          >
-                            <ChevronUp className="w-4 h-4" />
-                          </button>
+                        <div className="flex items-center gap-0.5 sm:gap-1 bg-secondary rounded-lg">
+                        <button
+                          onClick={() => handleVote(message.id, 'like')}
+                          disabled={votingInProgress.has(message.id)}
+                          className={cn(
+                            "p-1.5 sm:p-2 rounded-l-lg transition-colors",
+                            message.userVote === 'like'
+                              ? "text-primary bg-primary/20"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                            votingInProgress.has(message.id) && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          <ChevronUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
                           <span
                             className={cn(
-                              "text-sm font-medium min-w-[2rem] text-center",
+                              "text-xs sm:text-sm font-medium min-w-[1.75rem] sm:min-w-[2rem] text-center",
                               score > 0 ? "text-primary" : score < 0 ? "text-destructive" : "text-muted-foreground"
                             )}
                           >
@@ -960,24 +1112,26 @@ export default function ChatRoom() {
                           </span>
                           <button
                             onClick={() => handleVote(message.id, 'dislike')}
+                            disabled={votingInProgress.has(message.id)}
                             className={cn(
-                              "p-2 rounded-r-lg transition-colors",
+                              "p-1.5 sm:p-2 rounded-r-lg transition-colors",
                               message.userVote === 'dislike'
                                 ? "text-destructive bg-destructive/20"
-                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                              votingInProgress.has(message.id) && "opacity-50 cursor-not-allowed"
                             )}
                           >
-                            <ChevronDown className="w-4 h-4" />
+                            <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </button>
                         </div>
 
                         {/* Comments */}
                         <button
                           onClick={() => toggleComments(message.id)}
-                          className="flex items-center gap-1.5 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+                          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
                         >
-                          <MessageCircle className="w-4 h-4" />
-                          <span className="text-sm">{message.commentCount || 0}</span>
+                          <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <span className="text-xs sm:text-sm">{message.commentCount || 0}</span>
                         </button>
                       </div>
 
@@ -1007,52 +1161,64 @@ export default function ChatRoom() {
                             // Silently fail
                           }
                         }}
-                        className="flex items-center gap-1.5 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+                        className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
                       >
-                        <Share2 className="w-4 h-4" />
-                        <span className="text-sm hidden sm:inline">Share</span>
+                        <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span className="text-xs sm:text-sm hidden sm:inline">Share</span>
                       </button>
                     </div>
 
                     {/* Comments Section */}
                     {isCommentsExpanded && (
-                      <div className="mt-4 pt-4 border-t border-border space-y-3">
+                      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border space-y-2 sm:space-y-3">
                         {/* Existing Comments */}
                         {messageComments.map((comment) => (
-                          <div key={comment.id} className="flex gap-2 pl-2">
-                            <div
-                              className={cn(
-                                "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0",
-                                comment.avatarColor
-                              )}
-                            >
-                              {getInitials(comment.username)}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-medium text-primary">
+                          <div key={comment.id} className="flex gap-1.5 sm:gap-2 pl-1 sm:pl-2">
+                            <img
+                              src={comment.avatarColor || '/d1.webp'}
+                              alt={comment.username}
+                              className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover shrink-0"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (!target.src.includes('d1.webp')) {
+                                  target.src = '/d1.webp';
+                                }
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+                                <span className="text-[11px] sm:text-xs font-medium text-primary truncate">
                                   {comment.username}
                                 </span>
-                                <span className="text-[10px] text-muted-foreground">
+                                <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">
                                   {formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true })}
                                 </span>
                               </div>
-                              <p className="text-sm text-foreground">{comment.content}</p>
+                              <p className="text-xs sm:text-sm text-foreground break-words">{comment.content}</p>
                             </div>
                           </div>
                         ))}
 
                         {/* Add Comment Input */}
-                        <div className="flex gap-2 pl-2">
-                          <div
-                            className={cn(
-                              "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0",
-                              user?.avatarColor
-                            )}
-                          >
-                            {user ? getInitials(user.username) : '?'}
-                          </div>
-                          <div className="flex-1 flex gap-2">
+                        <div className="flex gap-1.5 sm:gap-2 pl-1 sm:pl-2">
+                          {user ? (
+                            <img
+                              src={user.avatarColor || '/d1.webp'}
+                              alt={user.username}
+                              className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover shrink-0"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (!target.src.includes('/d1.webp')) {
+                                  target.src = '/d1.webp';
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-muted flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white shrink-0">
+                              ?
+                            </div>
+                          )}
+                          <div className="flex-1 flex gap-1.5 sm:gap-2">
                             <Input
                               value={commentInputs[message.id] || ''}
                               onChange={(e) =>
@@ -1068,12 +1234,12 @@ export default function ChatRoom() {
                                 }
                               }}
                               placeholder="Add a comment..."
-                              className="flex-1 text-sm h-8"
+                              className="flex-1 text-xs sm:text-sm h-7 sm:h-8"
                             />
                             <Button
                               onClick={() => handleComment(message.id)}
                               size="sm"
-                              className="h-8"
+                              className="h-7 sm:h-8 px-2 sm:px-3"
                               disabled={!commentInputs[message.id]?.trim()}
                             >
                               <Send className="w-3 h-3" />
@@ -1086,15 +1252,15 @@ export default function ChatRoom() {
                 );
               })
             ) : (
-              <div className="bg-card border border-border rounded-xl p-12 text-center">
-                <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                <p className="text-muted-foreground mb-2">
+              <div className="bg-card border border-border rounded-lg sm:rounded-xl p-8 sm:p-12 text-center">
+                <MessageCircle className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground mx-auto mb-3 sm:mb-4 opacity-50" />
+                <p className="text-sm sm:text-base text-muted-foreground mb-2">
                   {searchQuery ? "No messages found" : "No messages yet"}
                 </p>
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="mt-4 text-sm text-primary hover:underline"
+                    className="mt-3 sm:mt-4 text-xs sm:text-sm text-primary hover:underline"
                   >
                     Clear search
                   </button>
@@ -1162,9 +1328,7 @@ export default function ChatRoom() {
               {/* Guidelines */}
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
-                    <AlertCircle className="w-2.5 h-2.5 text-white" />
-                  </div>
+                  <ScrollText className="w-5 h-5 text-red-500" />
                   <span className="font-medium">Guidelines</span>
                 </div>
                 <ul className="space-y-2">
@@ -1177,30 +1341,6 @@ export default function ChatRoom() {
                 </ul>
               </div>
 
-              {/* User Info */}
-              {user && (
-                <div className="bg-card border border-border rounded-xl p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white",
-                        user.avatarColor
-                      )}
-                    >
-                      {getInitials(user.username)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {user.username}
-                      </p>
-                      <p className="text-xs text-muted-foreground">You</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Messages are automatically deleted after 1 week
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -1244,6 +1384,87 @@ export default function ChatRoom() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Creator Dialog */}
+      <Dialog open={creatorDialogOpen} onOpenChange={setCreatorDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-bold text-red-500 uppercase tracking-wider" style={{ fontFamily: 'monospace', letterSpacing: '0.2em', textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5), 0 0 10px rgba(255, 0, 0, 0.5)' }}>
+              CREATOR
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 opacity-75 blur-xl animate-pulse"></div>
+              <img 
+                src="/satan-robot.gif" 
+                alt="Satan Robot" 
+                className="relative w-full max-w-xs h-auto rounded-2xl shadow-2xl"
+                style={{
+                  boxShadow: '0 0 30px rgba(255, 69, 0, 0.8), 0 0 60px rgba(255, 0, 0, 0.6), 0 0 90px rgba(255, 140, 0, 0.4)'
+                }}
+              />
+            </div>
+            <p className="text-center text-red-500 text-sm sm:text-base font-medium uppercase tracking-wider" style={{ fontFamily: 'monospace', letterSpacing: '0.15em', textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 0, 0, 0.7), 0 0 20px rgba(255, 69, 0, 0.5)' }}>
+              made with hate by the devil
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Profile Dialog */}
+      {user && (() => {
+        const avatarPath = getAvatarFromUsername(user.username);
+        const avatarNumber = getAvatarNumberFromPath(avatarPath);
+        const colorScheme = getAvatarColorScheme(avatarNumber);
+        const textColor = avatarNumber === 1 ? 'text-red-400' :
+                         avatarNumber === 2 ? 'text-gray-400' :
+                         avatarNumber === 3 ? 'text-purple-400' :
+                         avatarNumber === 4 ? 'text-green-400' :
+                         avatarNumber === 5 ? 'text-white' :
+                         avatarNumber === 6 ? 'text-red-400' :
+                         'text-gray-400';
+        
+        return (
+          <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className={`text-center text-xl font-bold ${textColor} uppercase tracking-wider`} style={{ fontFamily: 'monospace', letterSpacing: '0.2em', textShadow: colorScheme.textShadow }}>
+                  PROFILE
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="relative">
+                  <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${colorScheme.glow.from} ${colorScheme.glow.via} ${colorScheme.glow.to} opacity-75 blur-xl animate-pulse`}></div>
+                  <img
+                    src={avatarPath}
+                    alt={`${user.username} Avatar`}
+                    className="relative w-full max-w-xs h-auto rounded-2xl shadow-2xl object-cover"
+                    style={{
+                      boxShadow: colorScheme.boxShadow
+                    }}
+                    onError={(e) => {
+                      // Fallback to d1 if image fails to load
+                      const target = e.target as HTMLImageElement;
+                      if (!target.src.includes('d1.webp')) {
+                        target.src = '/d1.webp';
+                      }
+                    }}
+                  />
+                </div>
+                <div className="text-center">
+                  <p className={`${textColor} text-sm sm:text-base font-medium uppercase tracking-wider mb-2`} style={{ fontFamily: 'monospace', letterSpacing: '0.15em', textShadow: colorScheme.textShadow }}>
+                    {user.username}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Messages are automatically deleted after 1 week
+                  </p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </div>
   );
 }
