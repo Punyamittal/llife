@@ -160,6 +160,7 @@ export default function ChatRoom() {
   const [isLoading, setIsLoading] = useState(true);
   const [newPostModalOpen, setNewPostModalOpen] = useState(false);
   const [creatorDialogOpen, setCreatorDialogOpen] = useState(false);
+  const [showEasterEgg, setShowEasterEgg] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [showAvatarSelection, setShowAvatarSelection] = useState(false);
   const [votingInProgress, setVotingInProgress] = useState<Set<string>>(new Set());
@@ -1480,7 +1481,13 @@ export default function ChatRoom() {
       </AlertDialog>
 
       {/* Creator Dialog */}
-      <Dialog open={creatorDialogOpen} onOpenChange={setCreatorDialogOpen}>
+      <Dialog 
+        open={creatorDialogOpen} 
+        onOpenChange={(open) => {
+          setCreatorDialogOpen(open);
+          if (!open) setShowEasterEgg(false);
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-xl font-bold text-red-500 uppercase tracking-wider" style={{ fontFamily: 'monospace', letterSpacing: '0.2em', textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5), 0 0 10px rgba(255, 0, 0, 0.5)' }}>
@@ -1490,18 +1497,32 @@ export default function ChatRoom() {
           <div className="flex flex-col items-center gap-4 py-4">
             <div className="relative">
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-orange-500 via-red-500 to-orange-500 opacity-75 blur-xl animate-pulse"></div>
-              <img 
-                src="/satan-robot.gif" 
-                alt="Satan Robot" 
-                className="relative w-full max-w-xs h-auto rounded-2xl shadow-2xl"
-                style={{
-                  boxShadow: '0 0 30px rgba(255, 69, 0, 0.8), 0 0 60px rgba(255, 0, 0, 0.6), 0 0 90px rgba(255, 140, 0, 0.4)'
+              <button
+                onClick={() => {
+                  setShowEasterEgg(true);
+                  setTimeout(() => setShowEasterEgg(false), 3000);
                 }}
-              />
+                className="relative cursor-pointer group"
+              >
+                <img 
+                  src="/satan-robot.gif" 
+                  alt="Satan Robot" 
+                  className="relative w-full max-w-xs h-auto rounded-2xl shadow-2xl transition-transform group-hover:scale-105"
+                  style={{
+                    boxShadow: '0 0 30px rgba(255, 69, 0, 0.8), 0 0 60px rgba(255, 0, 0, 0.6), 0 0 90px rgba(255, 140, 0, 0.4)'
+                  }}
+                />
+              </button>
             </div>
-            <p className="text-center text-red-500 text-sm sm:text-base font-medium uppercase tracking-wider" style={{ fontFamily: 'monospace', letterSpacing: '0.15em', textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 0, 0, 0.7), 0 0 20px rgba(255, 69, 0, 0.5)' }}>
-              made with hate by the devil
-            </p>
+            {showEasterEgg ? (
+              <p className="text-center text-red-500 text-sm sm:text-base font-medium uppercase tracking-wider animate-pulse" style={{ fontFamily: 'monospace', letterSpacing: '0.15em', textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 0, 0, 0.7), 0 0 20px rgba(255, 69, 0, 0.5)' }}>
+                the devil is in hell
+              </p>
+            ) : (
+              <p className="text-center text-red-500 text-sm sm:text-base font-medium uppercase tracking-wider" style={{ fontFamily: 'monospace', letterSpacing: '0.15em', textShadow: '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 0, 0, 0.7), 0 0 20px rgba(255, 69, 0, 0.5)' }}>
+                made with hate by the devil
+              </p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
