@@ -34,4 +34,5 @@ export interface TrendingMessage {
   avatarColor: string;
   likes: number;
   timestamp: number;
+  category?: Category;
 }

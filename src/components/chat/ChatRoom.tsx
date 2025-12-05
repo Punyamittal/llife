@@ -978,6 +978,36 @@ export default function ChatRoom() {
     }
   };
 
+  const scrollToMessage = (messageId: string, messageCategory?: Category) => {
+    // If message is in a different category, switch to that category first
+    if (messageCategory && messageCategory !== activeCategory && messageCategory !== 'all') {
+      setActiveCategory(messageCategory);
+      // Wait a bit for the category to change and messages to filter
+      setTimeout(() => {
+        const element = document.getElementById(`message-${messageId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Add a highlight effect
+          element.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+          setTimeout(() => {
+            element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+          }, 2000);
+        }
+      }, 100);
+    } else {
+      // Message should be visible, scroll to it
+      const element = document.getElementById(`message-${messageId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Add a highlight effect
+        element.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+        setTimeout(() => {
+          element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+        }, 2000);
+      }
+    }
+  };
+
   const getInitials = (username: string) => {
     return username.substring(0, 2).toUpperCase();
   };
@@ -1097,6 +1127,7 @@ export default function ChatRoom() {
 
                 return (
                   <article
+                    id={`message-${message.id}`}
                     key={message.id}
                     className={cn(
                       "bg-card border border-border rounded-lg sm:rounded-xl p-3 sm:p-4 transition-all duration-300 hover:border-primary/30",
@@ -1381,7 +1412,8 @@ export default function ChatRoom() {
                       return (
                         <div
                           key={msg.id}
-                          className="flex items-start gap-3 group cursor-pointer"
+                          onClick={() => scrollToMessage(msg.id, msg.category)}
+                          className="flex items-start gap-3 group cursor-pointer hover:bg-secondary/50 rounded-lg p-2 -m-2 transition-colors"
                         >
                           <span className="text-lg font-bold text-foreground w-5 shrink-0">
                             {index + 1}
