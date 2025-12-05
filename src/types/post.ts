@@ -4,7 +4,7 @@ export type Category =
   | "campus-updates"
   | "academics"
   | "events"
-  | "Gossips"
+  | "Conffesions"
   | "clubs"
   | "placements";
 

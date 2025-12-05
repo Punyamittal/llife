@@ -1,5 +1,5 @@
 -- Add category column to messages table
-ALTER TABLE messages ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'all' CHECK (category IN ('all', 'news', 'campus-updates', 'academics', 'events', 'Gossips', 'clubs', 'placements'));
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'all' CHECK (category IN ('all', 'news', 'campus-updates', 'academics', 'events', 'Conffesions', 'clubs', 'placements'));
 
 -- Create index for faster category filtering
 CREATE INDEX IF NOT EXISTS idx_messages_category ON messages(category);

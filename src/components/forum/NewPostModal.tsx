@@ -45,9 +45,9 @@ const NewPostModal = ({ isOpen, onClose, onSubmit }: NewPostModalProps) => {
             <div className="flex flex-wrap gap-1.5">
               {categories
                 .filter((c) => c.id !== "all")
-                .filter((c) => c.id === "news" || c.id === "campus-updates" || c.id === "academics" || c.id === "events" || c.id === "Gossips" || c.id === "clubs" || c.id === "placements")
+                .filter((c) => c.id === "news" || c.id === "campus-updates" || c.id === "academics" || c.id === "events" || c.id === "Conffesions" || c.id === "clubs" || c.id === "placements")
                 .sort((a, b) => {
-                  const order = ["news", "campus-updates", "academics", "events", "Gossips", "clubs", "placements"];
+                  const order = ["news", "campus-updates", "academics", "events", "Conffesions", "clubs", "placements"];
                   return order.indexOf(a.id) - order.indexOf(b.id);
                 })
                 .map((cat) => (

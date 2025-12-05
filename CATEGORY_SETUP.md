@@ -6,7 +6,7 @@ Run this SQL in your Supabase SQL Editor to add category support to messages:
 
 ```sql
 -- Add category column to messages table
-ALTER TABLE messages ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'all' CHECK (category IN ('all', 'news', 'campus-updates', 'academics', 'events', 'Gossips', 'clubs', 'placements'));
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'all' CHECK (category IN ('all', 'news', 'campus-updates', 'academics', 'events', 'Conffesions', 'clubs', 'placements'));
 
 -- Create index for faster category filtering
 CREATE INDEX IF NOT EXISTS idx_messages_category ON messages(category);
@@ -35,7 +35,7 @@ After running the SQL, your messages table will have a `category` column. All ne
 - 🏛️ **Campus Updates** - Updates about campus facilities, services
 - 📚 **Academics** - Academic discussions, classes, professors
 - 🎉 **Events** - Campus events, festivals, activities
-- 💬 **Gossips** - Anonymous Gossips
+- 💬 **Conffesions** - Anonymous Conffesions
 - 🎯 **Clubs** - Club activities, announcements
 - 💼 **Placements** - Job opportunities, placement news
 

@@ -1037,7 +1037,7 @@ export default function ChatRoom() {
                             message.category === 'campus-updates' && "bg-orange-500/20 text-orange-400",
                             message.category === 'academics' && "bg-emerald-500/20 text-emerald-400",
                             message.category === 'events' && "bg-pink-500/20 text-pink-400",
-                            message.category === 'Gossips' && "bg-purple-500/20 text-purple-400",
+                            message.category === 'Conffesions' && "bg-purple-500/20 text-purple-400",
                             message.category === 'clubs' && "bg-cyan-500/20 text-cyan-400",
                             message.category === 'placements' && "bg-amber-500/20 text-amber-400",
                           )}>

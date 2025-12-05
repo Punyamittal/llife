@@ -15,7 +15,7 @@ const categoryColors: Record<Category, string> = {
   "campus-updates": "bg-orange-500/20 text-orange-400",
   academics: "bg-emerald-500/20 text-emerald-400",
   events: "bg-pink-500/20 text-pink-400",
-  Gossips: "bg-purple-500/20 text-purple-400",
+  Conffesions: "bg-purple-500/20 text-purple-400",
   clubs: "bg-cyan-500/20 text-cyan-400",
   placements: "bg-amber-500/20 text-amber-400",
 };
