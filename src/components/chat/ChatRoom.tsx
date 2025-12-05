@@ -392,6 +392,7 @@ export default function ChatRoom() {
               avatarColor: item.message.avatar_color,
               likes: item.likes,
               timestamp: new Date(item.message.created_at).getTime(),
+              category: item.message.category as Category | undefined,
             }));
           setTrendingMessages(trending);
         }
