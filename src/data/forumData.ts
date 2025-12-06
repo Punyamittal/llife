@@ -19,7 +19,7 @@ export const categories: { id: Category; label: string; icon: LucideIcon }[] = [
   { id: "campus-updates", label: "Campus Updates", icon: Building2 },
   { id: "academics", label: "Academics", icon: BookOpen },
   { id: "events", label: "Events", icon: Calendar },
-  { id: "Conffesions", label: "Conffesions", icon: MessageSquare },
+  { id: "Confessions", label: "Confessions", icon: MessageSquare },
   { id: "clubs", label: "Clubs", icon: Users },
   { id: "placements", label: "Placements", icon: Briefcase },
 ];
@@ -70,7 +70,7 @@ export const mockPosts: Post[] = [
     username: "AnonymousPanda",
     avatarInitial: "A",
     avatarColor: "bg-pink-600",
-    category: "Conffesions",
+    category: "Confessions",
     timestamp: new Date(now.getTime() - 3600000 * 12),
     upvotes: 89,
     downvotes: 5,

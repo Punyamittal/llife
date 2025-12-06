@@ -176,6 +176,12 @@ export default function ChatRoom() {
   const [devilTypingCount, setDevilTypingCount] = useState(0);
   const [lastDevilTypingTime, setLastDevilTypingTime] = useState<number>(0);
   
+  // Rate limiting state
+  const [messageTimestamps, setMessageTimestamps] = useState<number[]>([]);
+  const [commentTimestamps, setCommentTimestamps] = useState<number[]>([]);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const [rateLimitMessage, setRateLimitMessage] = useState<string>("");
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const sessionIdRef = useRef<string>("");
@@ -665,10 +671,38 @@ export default function ChatRoom() {
     };
   }, []);
 
+  // Cleanup old rate limit timestamps every minute
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      setMessageTimestamps(prev => prev.filter(timestamp => now - timestamp < 30000));
+      setCommentTimestamps(prev => prev.filter(timestamp => now - timestamp < 30000));
+    }, 60000); // Clean up every minute
+
+    return () => clearInterval(cleanupInterval);
+  }, []);
+
   // Removed auto-scroll since newest messages are now on top
 
   const handleNewPost = async (content: string, category: Category) => {
     if (!content.trim() || !user) return;
+
+    // Rate limiting: Max 5 messages per 30 seconds
+    const now = Date.now();
+    const recentMessages = messageTimestamps.filter(timestamp => now - timestamp < 30000); // 30 seconds
+    
+    if (recentMessages.length >= 5) {
+      const timeRemaining = Math.ceil((30000 - (now - recentMessages[0])) / 1000);
+      toast({
+        title: "Rate Limit Exceeded",
+        description: `Please wait ${timeRemaining} seconds before posting again. Maximum 5 messages per 30 seconds.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update message timestamps
+    setMessageTimestamps(prev => [...prev.filter(t => now - t < 30000), now]);
 
     // Ghost Writer Activation: Type "devil" 3 times in a row
     const lowerText = content.toLowerCase();
@@ -882,6 +916,23 @@ export default function ChatRoom() {
   const handleComment = async (messageId: string) => {
     const commentText = commentInputs[messageId]?.trim();
     if (!commentText || !user) return;
+
+    // Rate limiting: Max 10 comments per 30 seconds
+    const now = Date.now();
+    const recentComments = commentTimestamps.filter(timestamp => now - timestamp < 30000); // 30 seconds
+    
+    if (recentComments.length >= 10) {
+      const timeRemaining = Math.ceil((30000 - (now - recentComments[0])) / 1000);
+      toast({
+        title: "Rate Limit Exceeded",
+        description: `Please wait ${timeRemaining} seconds before commenting again. Maximum 10 comments per 30 seconds.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update comment timestamps
+    setCommentTimestamps(prev => [...prev.filter(t => now - t < 30000), now]);
 
     // Echo Chamber Activation: Reply to your own message 3 times
     const message = messages.find(m => m.id === messageId);
@@ -1365,7 +1416,7 @@ export default function ChatRoom() {
                             message.category === 'campus-updates' && "bg-orange-500/20 text-orange-400",
                             message.category === 'academics' && "bg-emerald-500/20 text-emerald-400",
                             message.category === 'events' && "bg-pink-500/20 text-pink-400",
-                            message.category === 'Conffesions' && "bg-purple-500/20 text-purple-400",
+                            message.category === 'Confessions' && "bg-purple-500/20 text-purple-400",
                             message.category === 'clubs' && "bg-cyan-500/20 text-cyan-400",
                             message.category === 'placements' && "bg-amber-500/20 text-amber-400",
                           )}>
@@ -1670,7 +1721,7 @@ export default function ChatRoom() {
                                   msg.category === 'campus-updates' && "bg-orange-500/20 text-orange-400",
                                   msg.category === 'academics' && "bg-emerald-500/20 text-emerald-400",
                                   msg.category === 'events' && "bg-pink-500/20 text-pink-400",
-                                  msg.category === 'confessions' && "bg-purple-500/20 text-purple-400",
+                                  msg.category === 'Confessions' && "bg-purple-500/20 text-purple-400",
                                   msg.category === 'clubs' && "bg-cyan-500/20 text-cyan-400",
                                   msg.category === 'placements' && "bg-amber-500/20 text-amber-400",
                                 )}>
