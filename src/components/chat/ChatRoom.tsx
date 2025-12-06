@@ -182,6 +182,9 @@ export default function ChatRoom() {
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [rateLimitMessage, setRateLimitMessage] = useState<string>("");
   
+  // Duplicate post prevention: track recent message contents
+  const [recentMessageContents, setRecentMessageContents] = useState<Array<{ content: string; timestamp: number }>>([]);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const sessionIdRef = useRef<string>("");
@@ -671,12 +674,14 @@ export default function ChatRoom() {
     };
   }, []);
 
-  // Cleanup old rate limit timestamps every minute
+  // Cleanup old rate limit timestamps and duplicate post tracking every minute
   useEffect(() => {
     const cleanupInterval = setInterval(() => {
       const now = Date.now();
       setMessageTimestamps(prev => prev.filter(timestamp => now - timestamp < 30000));
       setCommentTimestamps(prev => prev.filter(timestamp => now - timestamp < 30000));
+      // Clean up message contents older than 10 minutes
+      setRecentMessageContents(prev => prev.filter(item => now - item.timestamp < 10 * 60 * 1000));
     }, 60000); // Clean up every minute
 
     return () => clearInterval(cleanupInterval);
@@ -703,6 +708,38 @@ export default function ChatRoom() {
 
     // Update message timestamps
     setMessageTimestamps(prev => [...prev.filter(t => now - t < 30000), now]);
+
+    // Duplicate post prevention: Check if same content was posted in last 10 minutes
+    const trimmedContent = content.trim().toLowerCase();
+    const tenMinutesAgo = now - (10 * 60 * 1000); // 10 minutes
+    const recentContents = recentMessageContents.filter(
+      item => item.timestamp > tenMinutesAgo
+    );
+    
+    const isDuplicate = recentContents.some(
+      item => item.content.toLowerCase() === trimmedContent
+    );
+    
+    if (isDuplicate) {
+      const oldestDuplicate = recentContents.find(
+        item => item.content.toLowerCase() === trimmedContent
+      );
+      if (oldestDuplicate) {
+        const timeRemaining = Math.ceil((10 * 60 * 1000 - (now - oldestDuplicate.timestamp)) / 1000 / 60);
+        toast({
+          title: "Duplicate Post Detected",
+          description: `You've already posted this message. Please wait ${timeRemaining} minute${timeRemaining !== 1 ? 's' : ''} before posting the same content again.`,
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    // Update recent message contents
+    setRecentMessageContents(prev => [
+      ...prev.filter(item => item.timestamp > tenMinutesAgo),
+      { content: trimmedContent, timestamp: now }
+    ]);
 
     // Ghost Writer Activation: Type "devil" 3 times in a row
     const lowerText = content.toLowerCase();
