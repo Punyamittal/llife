@@ -163,6 +163,7 @@ export default function ChatRoom() {
   const [showEasterEgg, setShowEasterEgg] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [showAvatarSelection, setShowAvatarSelection] = useState(false);
+  const [showLegendaryAvatars, setShowLegendaryAvatars] = useState(false);
   const [votingInProgress, setVotingInProgress] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -1573,25 +1574,58 @@ export default function ChatRoom() {
                          avatarNumber === 6 ? 'text-red-400' :
                          avatarNumber === 7 ? 'text-gray-400' :
                          avatarNumber === 8 ? 'text-blue-400' :
+                         avatarNumber === 9 ? 'text-purple-400' :
+                         avatarNumber === 10 ? 'text-blue-400' :
+                         avatarNumber === 11 ? 'text-red-400' :
                          'text-gray-400';
+        
+        // Determine if this is a legendary avatar and get its glow
+        const isLegendary = avatarNumber >= 9 && avatarNumber <= 11;
+        const legendaryGlow = avatarNumber === 9 ? 'from-purple-600 via-gray-400 to-purple-600' :
+                              avatarNumber === 10 ? 'from-blue-600 via-blue-100 to-blue-600' :
+                              avatarNumber === 11 ? 'from-red-600 via-green-500 to-red-600' :
+                              null;
         
         return (
           <Dialog 
             open={profileDialogOpen} 
             onOpenChange={(open) => {
               setProfileDialogOpen(open);
-              if (!open) setShowAvatarSelection(false);
+              if (!open) {
+                setShowAvatarSelection(false);
+                setShowLegendaryAvatars(false);
+              }
             }}
           >
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle className={`text-center text-xl font-bold ${textColor} uppercase tracking-wider`} style={{ fontFamily: 'monospace', letterSpacing: '0.2em', textShadow: colorScheme.textShadow }}>
+                <DialogTitle 
+                  className={`text-center text-xl font-bold ${textColor} uppercase tracking-wider cursor-pointer select-none`} 
+                  style={{ 
+                    fontFamily: 'monospace', 
+                    letterSpacing: '0.2em', 
+                    textShadow: isLegendary 
+                      ? (avatarNumber === 9 
+                          ? '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(147, 51, 234, 0.7), 0 0 20px rgba(107, 114, 128, 0.5)'
+                          : avatarNumber === 10
+                          ? '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(37, 99, 235, 0.7), 0 0 20px rgba(219, 234, 254, 0.5)'
+                          : '2px 2px 6px rgba(0, 0, 0, 0.8), 0 0 12px rgba(220, 38, 38, 0.7), 0 0 20px rgba(34, 197, 94, 0.5)')
+                      : colorScheme.textShadow 
+                  }}
+                  onDoubleClick={() => {
+                    setShowLegendaryAvatars(!showLegendaryAvatars);
+                  }}
+                >
                   PROFILE
                 </DialogTitle>
               </DialogHeader>
               <div className="flex flex-col items-center gap-4 py-4">
                 <div className="relative">
-                  <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${colorScheme.glow.from} ${colorScheme.glow.via} ${colorScheme.glow.to} opacity-75 blur-xl animate-pulse`}></div>
+                  {isLegendary && legendaryGlow ? (
+                    <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${legendaryGlow} opacity-80 blur-xl animate-pulse`}></div>
+                  ) : (
+                    <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${colorScheme.glow.from} ${colorScheme.glow.via} ${colorScheme.glow.to} opacity-75 blur-xl animate-pulse`}></div>
+                  )}
                   <button
                     onClick={() => setShowAvatarSelection(!showAvatarSelection)}
                     className="relative group cursor-pointer"
@@ -1599,9 +1633,15 @@ export default function ChatRoom() {
                     <img
                       src={avatarPath}
                       alt={`${user.username} Avatar`}
-                      className="relative w-full max-w-xs h-auto rounded-2xl shadow-2xl object-cover transition-all group-hover:opacity-80 group-hover:scale-105"
+                      className="relative w-full max-w-xs h-auto rounded-2xl shadow-2xl object-cover transition-all group-hover:opacity-80 group-hover:scale-105 z-10"
                       style={{
-                        boxShadow: colorScheme.boxShadow
+                        boxShadow: isLegendary 
+                          ? (avatarNumber === 9 
+                              ? '0 0 30px rgba(147, 51, 234, 0.8), 0 0 60px rgba(107, 114, 128, 0.6), 0 0 90px rgba(147, 51, 234, 0.4)'
+                              : avatarNumber === 10
+                              ? '0 0 30px rgba(37, 99, 235, 0.8), 0 0 60px rgba(219, 234, 254, 0.6), 0 0 90px rgba(37, 99, 235, 0.4)'
+                              : '0 0 30px rgba(220, 38, 38, 0.8), 0 0 60px rgba(34, 197, 94, 0.6), 0 0 90px rgba(220, 38, 38, 0.4)')
+                          : colorScheme.boxShadow
                       }}
                       onError={(e) => {
                         // Fallback to d1 if image fails to load
@@ -1664,6 +1704,80 @@ export default function ChatRoom() {
                       className="w-full mt-3 px-4 py-2 text-sm bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
                     >
                       Cancel
+                    </button>
+                  </div>
+                )}
+                
+                {/* Legendary Avatars Section - Only shown when PROFILE text is double-clicked */}
+                {showLegendaryAvatars && (
+                  <div className="w-full mt-2 p-4 bg-secondary/50 rounded-xl border border-border">
+                    <p className="text-sm font-medium mb-3 text-center text-yellow-400">Legendary Avatars</p>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { num: 9, ext: 'jpg', gradient: 'from-purple-600 via-gray-400 to-purple-600' },
+                        { num: 10, ext: 'png', gradient: 'from-blue-600 via-blue-100 to-blue-600' },
+                        { num: 11, ext: 'jpg', gradient: 'from-red-600 via-green-500 to-red-600' }
+                      ].map(({ num, ext, gradient }) => {
+                        const avatarPathOption = `/d${num}.${ext}`;
+                        const isSelected = user.avatarColor === avatarPathOption;
+                        
+                        // Get ring color based on avatar number
+                        const ringColor = num === 9 ? 'ring-purple-400' : 
+                                        num === 10 ? 'ring-blue-400' : 
+                                        'ring-red-400';
+                        
+                        return (
+                          <button
+                            key={num}
+                            onClick={() => handleAvatarChange(avatarPathOption)}
+                            className={cn(
+                              "relative aspect-square rounded-lg overflow-visible transition-all hover:scale-110",
+                              isSelected && `ring-2 ${ringColor} ring-offset-2 ring-offset-background`
+                            )}
+                          >
+                            <div className={`absolute -inset-2 bg-gradient-to-r ${gradient} opacity-80 blur-lg animate-pulse rounded-lg`}></div>
+                            <div className="relative rounded-lg overflow-hidden z-10">
+                              <img
+                                src={avatarPathOption}
+                                alt={`Legendary Avatar ${num}`}
+                                className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = '/d1.webp';
+                              }}
+                              />
+                              {isSelected && (
+                                <div className={cn(
+                                  "absolute inset-0 flex items-center justify-center",
+                                  num === 9 && "bg-purple-400/20",
+                                  num === 10 && "bg-blue-400/20",
+                                  num === 11 && "bg-red-400/20"
+                                )}>
+                                  <div className={cn(
+                                    "w-6 h-6 rounded-full flex items-center justify-center",
+                                    num === 9 && "bg-purple-400",
+                                    num === 10 && "bg-blue-400",
+                                    num === 11 && "bg-red-400"
+                                  )}>
+                                    <span className={cn(
+                                      "text-xs font-bold",
+                                      num === 9 && "text-purple-900",
+                                      num === 10 && "text-blue-900",
+                                      num === 11 && "text-red-900"
+                                    )}>✓</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={() => setShowLegendaryAvatars(false)}
+                      className="w-full mt-3 px-4 py-2 text-sm bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+                    >
+                      Close
                     </button>
                   </div>
                 )}
