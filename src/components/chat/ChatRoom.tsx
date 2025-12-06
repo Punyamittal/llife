@@ -165,9 +165,23 @@ export default function ChatRoom() {
   const [showAvatarSelection, setShowAvatarSelection] = useState(false);
   const [showLegendaryAvatars, setShowLegendaryAvatars] = useState(false);
   const [votingInProgress, setVotingInProgress] = useState<Set<string>>(new Set());
+  
+  // Super Powers State
+  const [colorMasterActive, setColorMasterActive] = useState(false);
+  const [echoChamberActive, setEchoChamberActive] = useState(false);
+  const [ghostWriterActive, setGhostWriterActive] = useState(false);
+  const [avatarChangeHistory, setAvatarChangeHistory] = useState<number[]>([]);
+  const [selfReplyCount, setSelfReplyCount] = useState(0);
+  const [lastSelfReplyMessageId, setLastSelfReplyMessageId] = useState<string | null>(null);
+  const [devilTypingCount, setDevilTypingCount] = useState(0);
+  const [lastDevilTypingTime, setLastDevilTypingTime] = useState<number>(0);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const sessionIdRef = useRef<string>("");
+  const colorMasterTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const echoChamberTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const ghostWriterTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -638,6 +652,16 @@ export default function ChatRoom() {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
+      // Cleanup super power timers
+      if (colorMasterTimerRef.current) {
+        clearTimeout(colorMasterTimerRef.current);
+      }
+      if (echoChamberTimerRef.current) {
+        clearTimeout(echoChamberTimerRef.current);
+      }
+      if (ghostWriterTimerRef.current) {
+        clearTimeout(ghostWriterTimerRef.current);
+      }
     };
   }, []);
 
@@ -645,6 +669,43 @@ export default function ChatRoom() {
 
   const handleNewPost = async (content: string, category: Category) => {
     if (!content.trim() || !user) return;
+
+    // Ghost Writer Activation: Type "devil" 3 times in a row
+    const lowerText = content.toLowerCase();
+    const devilMatches = lowerText.match(/devil/g);
+    if (devilMatches && devilMatches.length >= 3) {
+      const now = Date.now();
+      if (now - lastDevilTypingTime < 5000) { // Within 5 seconds
+        const newCount = devilTypingCount + 1;
+        setDevilTypingCount(newCount);
+        setLastDevilTypingTime(now);
+        
+        if (newCount >= 3 && !ghostWriterActive) {
+          // Activate Ghost Writer for 5 minutes
+          setGhostWriterActive(true);
+          if (ghostWriterTimerRef.current) {
+            clearTimeout(ghostWriterTimerRef.current);
+          }
+          ghostWriterTimerRef.current = setTimeout(() => {
+            setGhostWriterActive(false);
+            toast({
+              title: "Ghost Writer Expired",
+              description: "Your special message styling has ended.",
+              variant: "default",
+            });
+          }, 5 * 60 * 1000); // 5 minutes
+          
+          toast({
+            title: "👻 Ghost Writer Activated!",
+            description: "Your messages will have special styling for 5 minutes!",
+            variant: "default",
+          });
+        }
+      } else {
+        setDevilTypingCount(1);
+        setLastDevilTypingTime(now);
+      }
+    }
 
     try {
       const { error } = await supabase.from('messages').insert({
@@ -822,6 +883,80 @@ export default function ChatRoom() {
     const commentText = commentInputs[messageId]?.trim();
     if (!commentText || !user) return;
 
+    // Echo Chamber Activation: Reply to your own message 3 times
+    const message = messages.find(m => m.id === messageId);
+    if (message && message.username === user.username) {
+      if (lastSelfReplyMessageId === messageId) {
+        const newCount = selfReplyCount + 1;
+        setSelfReplyCount(newCount);
+        
+        if (newCount >= 3 && !echoChamberActive) {
+          // Activate Echo Chamber for 1 minute
+          setEchoChamberActive(true);
+          if (echoChamberTimerRef.current) {
+            clearTimeout(echoChamberTimerRef.current);
+          }
+          echoChamberTimerRef.current = setTimeout(() => {
+            setEchoChamberActive(false);
+            toast({
+              title: "Echo Chamber Expired",
+              description: "Your messages are no longer auto-pinned.",
+              variant: "default",
+            });
+          }, 60 * 1000); // 1 minute
+          
+          toast({
+            title: "🔊 Echo Chamber Activated!",
+            description: "Your messages will be pinned to top for 1 minute!",
+            variant: "default",
+          });
+        }
+      } else {
+        setSelfReplyCount(1);
+        setLastSelfReplyMessageId(messageId);
+      }
+    } else {
+      setSelfReplyCount(0);
+      setLastSelfReplyMessageId(null);
+    }
+
+    // Ghost Writer Activation: Type "devil" 3 times in a row
+    const lowerText = commentText.toLowerCase();
+    const devilMatches = lowerText.match(/devil/g);
+    if (devilMatches && devilMatches.length >= 3) {
+      const now = Date.now();
+      if (now - lastDevilTypingTime < 5000) { // Within 5 seconds
+        const newCount = devilTypingCount + 1;
+        setDevilTypingCount(newCount);
+        setLastDevilTypingTime(now);
+        
+        if (newCount >= 3 && !ghostWriterActive) {
+          // Activate Ghost Writer for 5 minutes
+          setGhostWriterActive(true);
+          if (ghostWriterTimerRef.current) {
+            clearTimeout(ghostWriterTimerRef.current);
+          }
+          ghostWriterTimerRef.current = setTimeout(() => {
+            setGhostWriterActive(false);
+            toast({
+              title: "Ghost Writer Expired",
+              description: "Your special message styling has ended.",
+              variant: "default",
+            });
+          }, 5 * 60 * 1000); // 5 minutes
+          
+          toast({
+            title: "👻 Ghost Writer Activated!",
+            description: "Your messages will have special styling for 5 minutes!",
+            variant: "default",
+          });
+        }
+      } else {
+        setDevilTypingCount(1);
+        setLastDevilTypingTime(now);
+      }
+    }
+
     try {
       const { error } = await supabase.from('comments').insert({
         message_id: messageId,
@@ -965,6 +1100,35 @@ export default function ChatRoom() {
       );
 
       setShowAvatarSelection(false);
+      
+      // Color Master Activation: Change avatar 3 times in 10 seconds
+      const now = Date.now();
+      const recentChanges = avatarChangeHistory.filter(time => now - time < 10000);
+      const newHistory = [...recentChanges, now];
+      setAvatarChangeHistory(newHistory);
+      
+      if (newHistory.length >= 3 && !colorMasterActive) {
+        // Activate Color Master for 10 minutes
+        setColorMasterActive(true);
+        if (colorMasterTimerRef.current) {
+          clearTimeout(colorMasterTimerRef.current);
+        }
+        colorMasterTimerRef.current = setTimeout(() => {
+          setColorMasterActive(false);
+          toast({
+            title: "Color Master Expired",
+            description: "Your rainbow username effect has ended.",
+            variant: "default",
+          });
+        }, 10 * 60 * 1000); // 10 minutes
+        
+        toast({
+          title: "🎨 Color Master Activated!",
+          description: "Your username now has a rainbow effect for 10 minutes!",
+          variant: "default",
+        });
+      }
+      
       toast({
         title: "Avatar Updated",
         description: "Your avatar has been changed successfully.",
@@ -1020,6 +1184,16 @@ export default function ChatRoom() {
       msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
       msg.username.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
+  }).sort((a, b) => {
+    // Echo Chamber: Pin own messages to top when active
+    if (echoChamberActive && user) {
+      const aIsOwn = a.username === user.username;
+      const bIsOwn = b.username === user.username;
+      if (aIsOwn && !bIsOwn) return -1;
+      if (!aIsOwn && bIsOwn) return 1;
+    }
+    // Default: newest first (timestamp descending)
+    return b.timestamp - a.timestamp;
   });
 
 
@@ -1064,6 +1238,20 @@ export default function ChatRoom() {
           </div>
 
           <div className="shrink-0 flex items-center gap-1 sm:gap-2">
+            {/* Super Powers Indicators */}
+            {(colorMasterActive || echoChamberActive || ghostWriterActive) && (
+              <div className="flex items-center gap-1 px-2 py-1.5 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                {colorMasterActive && (
+                  <span className="text-yellow-400 text-xs" title="Color Master Active">🎨</span>
+                )}
+                {echoChamberActive && (
+                  <span className="text-yellow-400 text-xs" title="Echo Chamber Active">🔊</span>
+                )}
+                {ghostWriterActive && (
+                  <span className="text-yellow-400 text-xs" title="Ghost Writer Active">👻</span>
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 bg-accent/20 text-accent rounded-lg font-medium text-xs sm:text-sm">
               <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{onlineCount}+ online</span>
@@ -1154,9 +1342,21 @@ export default function ChatRoom() {
                               }
                             }}
                           />
-                          <span className="text-xs sm:text-sm font-medium text-primary truncate">
+                          <span 
+                            className={cn(
+                              "text-xs sm:text-sm font-medium truncate",
+                              colorMasterActive && isOwnMessage 
+                                ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent animate-pulse"
+                                : "text-primary"
+                            )}
+                          >
                             {message.username}
                           </span>
+                          {echoChamberActive && isOwnMessage && (
+                            <span className="text-yellow-400" title="Echo Chamber Active">
+                              📌
+                            </span>
+                          )}
                         </div>
                         {message.category && message.category !== 'all' && (
                           <span className={cn(
@@ -1208,9 +1408,22 @@ export default function ChatRoom() {
                     </div>
 
                     {/* Content */}
-                    <p className="text-foreground text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap mb-3 sm:mb-4">
-                      {message.content}
-                    </p>
+                    <div className={cn(
+                      "mb-3 sm:mb-4",
+                      ghostWriterActive && isOwnMessage && "relative p-2 rounded-lg"
+                    )}>
+                      {ghostWriterActive && isOwnMessage && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-red-500/30 rounded-lg blur-md animate-pulse"></div>
+                      )}
+                      <p className={cn(
+                        "text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap relative z-10",
+                        ghostWriterActive && isOwnMessage
+                          ? "text-foreground font-bold drop-shadow-lg"
+                          : "text-foreground"
+                      )}>
+                        {message.content}
+                      </p>
+                    </div>
 
                     {/* Actions */}
                     <div className="flex items-center justify-between gap-2">
@@ -1315,14 +1528,36 @@ export default function ChatRoom() {
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-                                <span className="text-[11px] sm:text-xs font-medium text-primary truncate">
+                                <span className={cn(
+                                  "text-[11px] sm:text-xs font-medium truncate",
+                                  colorMasterActive && comment.username === user?.username
+                                    ? "bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500 bg-clip-text text-transparent animate-pulse"
+                                    : "text-primary"
+                                )}>
                                   {comment.username}
                                 </span>
+                                {echoChamberActive && comment.username === user?.username && (
+                                  <span className="text-yellow-400 text-[10px]" title="Echo Chamber Active">📌</span>
+                                )}
                                 <span className="text-[9px] sm:text-[10px] text-muted-foreground shrink-0">
                                   {formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true })}
                                 </span>
                               </div>
-                              <p className="text-xs sm:text-sm text-foreground break-words">{comment.content}</p>
+                              <div className={cn(
+                                ghostWriterActive && comment.username === user?.username && "relative p-1 rounded"
+                              )}>
+                                {ghostWriterActive && comment.username === user?.username && (
+                                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-red-500/30 rounded blur-sm animate-pulse"></div>
+                                )}
+                                <p className={cn(
+                                  "text-xs sm:text-sm break-words relative z-10",
+                                  ghostWriterActive && comment.username === user?.username
+                                    ? "text-foreground font-bold drop-shadow-lg"
+                                    : "text-foreground"
+                                )}>
+                                  {comment.content}
+                                </p>
+                              </div>
                             </div>
                           </div>
                         ))}
