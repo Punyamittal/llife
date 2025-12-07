@@ -76,6 +76,29 @@ function generateAvatarColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
+function normalizeCollegeName(text) {
+  // Replace VIT, Vellore Institute of Technology, and variations with "my college"
+  // Case-insensitive matching with word boundaries where appropriate
+  
+  let normalized = text;
+  
+  // Replace "Vellore Institute of Technology" (case insensitive, with variations)
+  normalized = normalized.replace(/\bvellore\s+institute\s+of\s+technology\b/gi, 'my college');
+  
+  // Replace "Vellore Institute" (case insensitive)
+  normalized = normalized.replace(/\bvellore\s+institute\b/gi, 'my college');
+  
+  // Replace "VIT" as a standalone word (case insensitive)
+  // Using word boundaries to avoid replacing VIT in words like "VITAL" or "VISIT"
+  normalized = normalized.replace(/\bvit\b/gi, 'my college');
+  
+  // Replace "VIT Vellore" or "Vellore VIT" (case insensitive)
+  normalized = normalized.replace(/\bvit\s+vellore\b/gi, 'my college');
+  normalized = normalized.replace(/\bvellore\s+vit\b/gi, 'my college');
+  
+  return normalized;
+}
+
 // Get or create user
 function getOrCreateUser(socketId) {
   let user = db.prepare('SELECT * FROM users WHERE id = ?').get(socketId);
@@ -157,17 +180,20 @@ io.on('connection', (socket) => {
     
     const now = Date.now();
     
+    // Normalize college name before saving
+    const normalizedContent = normalizeCollegeName(content.trim());
+    
     // Save message to database
     const result = db.prepare(`
       INSERT INTO messages (username, content, avatar_color, created_at)
       VALUES (?, ?, ?, ?)
-    `).run(user.username, content.trim(), user.avatar_color, now);
+    `).run(user.username, normalizedContent, user.avatar_color, now);
     
     // Broadcast message to all clients
     const message = {
       id: result.lastInsertRowid.toString(),
       username: user.username,
-      content: content.trim(),
+      content: normalizedContent,
       avatarColor: user.avatar_color,
       timestamp: now
     };

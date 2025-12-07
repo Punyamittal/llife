@@ -83,6 +83,29 @@ function getAvatarNumberFromPath(avatarPath: string): number {
   return match ? parseInt(match[1], 10) : 1;
 }
 
+function normalizeCollegeName(text: string): string {
+  // Replace VIT, Vellore Institute of Technology, and variations with "my college"
+  // Case-insensitive matching with word boundaries where appropriate
+  
+  let normalized = text;
+  
+  // Replace "Vellore Institute of Technology" (case insensitive, with variations)
+  normalized = normalized.replace(/\bvellore\s+institute\s+of\s+technology\b/gi, 'my college');
+  
+  // Replace "Vellore Institute" (case insensitive)
+  normalized = normalized.replace(/\bvellore\s+institute\b/gi, 'my college');
+  
+  // Replace "VIT" as a standalone word (case insensitive)
+  // Using word boundaries to avoid replacing VIT in words like "VITAL" or "VISIT"
+  normalized = normalized.replace(/\bvit\b/gi, 'my college');
+  
+  // Replace "VIT Vellore" or "Vellore VIT" (case insensitive)
+  normalized = normalized.replace(/\bvit\s+vellore\b/gi, 'my college');
+  normalized = normalized.replace(/\bvellore\s+vit\b/gi, 'my college');
+  
+  return normalized;
+}
+
 function getAvatarColorScheme(avatarNumber: number) {
   // Color schemes for each avatar (d1-d8)
   const schemes: Record<number, {
@@ -266,7 +289,7 @@ export default function ChatRoom() {
           .from('messages')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(50);
+          .limit(100);
 
         if (messagesError) {
           console.error('Error fetching messages:', messagesError);
@@ -779,9 +802,12 @@ export default function ChatRoom() {
     }
 
     try {
+      // Normalize college name before saving
+      const normalizedContent = normalizeCollegeName(content.trim());
+      
       const { error } = await supabase.from('messages').insert({
         username: user.username,
-        content: content.trim(),
+        content: normalizedContent,
         avatar_color: user.avatarColor,
         category: category,
       });
@@ -1046,10 +1072,13 @@ export default function ChatRoom() {
     }
 
     try {
+      // Normalize college name before saving
+      const normalizedComment = normalizeCollegeName(commentText.trim());
+      
       const { error } = await supabase.from('comments').insert({
         message_id: messageId,
         username: user.username,
-        content: commentText,
+        content: normalizedComment,
         avatar_color: user.avatarColor,
       });
 
@@ -1267,7 +1296,9 @@ export default function ChatRoom() {
   };
 
   const filteredMessages = messages.filter((msg) => {
-    const matchesCategory = activeCategory === 'all' || msg.category === activeCategory;
+    // Handle messages without category - treat them as 'all'
+    const messageCategory = msg.category || 'all';
+    const matchesCategory = activeCategory === 'all' || messageCategory === activeCategory;
     const matchesSearch = !searchQuery ||
       msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
       msg.username.toLowerCase().includes(searchQuery.toLowerCase());
