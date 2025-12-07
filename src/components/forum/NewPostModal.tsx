@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Category } from "@/types/post";
 import { categories } from "@/data/forumData";
 import { cn } from "@/lib/utils";
-import { Send } from "lucide-react";
+import { Send, AlertCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +35,16 @@ const NewPostModal = ({ isOpen, onClose, onSubmit }: NewPostModalProps) => {
         <DialogHeader>
           <DialogTitle className="font-display">Create New Post</DialogTitle>
         </DialogHeader>
+
+        {/* Disclaimer */}
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+            <p className="text-xs text-amber-800 dark:text-amber-400">
+              This platform is not associated with any institution. All posts are fictional or user-generated.
+            </p>
+          </div>
+        </div>
 
         <div className="space-y-4 pt-2">
           {/* Category Selection */}

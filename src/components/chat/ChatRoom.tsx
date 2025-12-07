@@ -83,28 +83,6 @@ function getAvatarNumberFromPath(avatarPath: string): number {
   return match ? parseInt(match[1], 10) : 1;
 }
 
-function normalizeCollegeName(text: string): string {
-  // Replace VIT, Vellore Institute of Technology, and variations with "my college"
-  // Case-insensitive matching with word boundaries where appropriate
-  
-  let normalized = text;
-  
-  // Replace "Vellore Institute of Technology" (case insensitive, with variations)
-  normalized = normalized.replace(/\bvellore\s+institute\s+of\s+technology\b/gi, 'my college');
-  
-  // Replace "Vellore Institute" (case insensitive)
-  normalized = normalized.replace(/\bvellore\s+institute\b/gi, 'my college');
-  
-  // Replace "VIT" as a standalone word (case insensitive)
-  // Using word boundaries to avoid replacing VIT in words like "VITAL" or "VISIT"
-  normalized = normalized.replace(/\bvit\b/gi, 'my college');
-  
-  // Replace "VIT Vellore" or "Vellore VIT" (case insensitive)
-  normalized = normalized.replace(/\bvit\s+vellore\b/gi, 'my college');
-  normalized = normalized.replace(/\bvellore\s+vit\b/gi, 'my college');
-  
-  return normalized;
-}
 
 function getAvatarColorScheme(avatarNumber: number) {
   // Color schemes for each avatar (d1-d8)
@@ -802,12 +780,9 @@ export default function ChatRoom() {
     }
 
     try {
-      // Normalize college name before saving
-      const normalizedContent = normalizeCollegeName(content.trim());
-      
       const { error } = await supabase.from('messages').insert({
         username: user.username,
-        content: normalizedContent,
+        content: content.trim(),
         avatar_color: user.avatarColor,
         category: category,
       });
@@ -1072,13 +1047,10 @@ export default function ChatRoom() {
     }
 
     try {
-      // Normalize college name before saving
-      const normalizedComment = normalizeCollegeName(commentText.trim());
-      
       const { error } = await supabase.from('comments').insert({
         message_id: messageId,
         username: user.username,
-        content: normalizedComment,
+        content: commentText.trim(),
         avatar_color: user.avatarColor,
       });
 
@@ -1141,7 +1113,7 @@ export default function ChatRoom() {
         setReportedMessages((prev) => new Set(prev).add(messageToReport));
         toast({
           title: "Message Reported",
-          description: "Thank you for reporting. We'll review this message.",
+          description: "Thank you for reporting. Posts violating guidelines will be removed within 24 hours.",
           variant: "default",
         });
       }
@@ -1808,6 +1780,17 @@ export default function ChatRoom() {
                 </div>
               </div>
 
+              {/* Disclaimer */}
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                  <span className="font-medium text-amber-700 dark:text-amber-500">Disclaimer</span>
+                </div>
+                <p className="text-sm text-amber-800 dark:text-amber-400">
+                  This platform is not associated with any institution. All posts are fictional or user-generated.
+                </p>
+              </div>
+
               {/* Guidelines */}
               <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-4">
@@ -1845,7 +1828,7 @@ export default function ChatRoom() {
               Report Message
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Please provide a reason for reporting this message. This helps us review and take appropriate action.
+              Please provide a reason for reporting this message. Posts that violate guidelines will be automatically removed within 24 hours.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">

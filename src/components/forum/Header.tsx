@@ -24,7 +24,7 @@ const Header = ({ onNewPost, searchQuery, onSearchChange }: HeaderProps) => {
               <span className="text-red-500">hisper</span>
             </h1>
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-              Campus Forum
+              Anonymous Forum
             </p>
           </div>
         </div>

@@ -16,7 +16,7 @@ const now = new Date();
 export const categories: { id: Category; label: string; icon: LucideIcon }[] = [
   { id: "all", label: "All Posts", icon: Flame },
   { id: "news", label: "News", icon: Newspaper },
-  { id: "campus-updates", label: "Campus Updates", icon: Building2 },
+  { id: "campus-updates", label: "Updates", icon: Building2 },
   { id: "academics", label: "Academics", icon: BookOpen },
   { id: "events", label: "Events", icon: Calendar },
   { id: "Confessions", label: "Confessions", icon: MessageSquare },
@@ -166,9 +166,11 @@ export const trendingPosts: TrendingPost[] = [
 ];
 
 export const guidelines = [
-  "Be respectful to fellow students",
-  "No personal attacks or harassment",
-  "Don't share sensitive information",
-  "Keep it relevant to campus life",
+  "No naming colleges or institutions",
+  "No naming faculty or staff members",
+  "No defamatory content",
+  "No targeted harassment",
+  "Be respectful to others",
   "Report inappropriate content",
+  "Reported posts violating guidelines will be removed within 24 hours",
 ];

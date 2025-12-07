@@ -62,6 +62,17 @@ const Sidebar = ({ onlineCount, postsToday, trending }: SidebarProps) => {
         </div>
       </div>
 
+      {/* Disclaimer */}
+      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <AlertCircle className="w-4 h-4 text-amber-600" />
+          <span className="font-medium text-amber-700 dark:text-amber-500">Disclaimer</span>
+        </div>
+        <p className="text-sm text-amber-800 dark:text-amber-400">
+          This platform is not associated with any institution. All posts are fictional or user-generated.
+        </p>
+      </div>
+
       {/* Guidelines */}
       <div className="bg-card border border-border rounded-xl p-4">
         <div className="flex items-center gap-2 mb-4">
