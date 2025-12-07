@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Users, MessageCircle, Search, ChevronUp, ChevronDown, TrendingUp, MoreHorizontal, Flag, AlertTriangle, Flame, AlertCircle, Plus, ShieldCheck, Share2, User as UserIcon, ScrollText } from "lucide-react";
+import { Send, Users, MessageCircle, Search, ChevronUp, ChevronDown, TrendingUp, MoreHorizontal, Flag, AlertTriangle, Flame, AlertCircle, Plus, ShieldCheck, Share2, User as UserIcon, ScrollText, Trash2, Lock } from "lucide-react";
 import { ChatSkeleton } from "@/components/ui/chat-skeleton";
 import NewPostModal from "@/components/forum/NewPostModal";
 import { format, formatDistanceToNow } from "date-fns";
@@ -166,6 +166,13 @@ export default function ChatRoom() {
   const [showAvatarSelection, setShowAvatarSelection] = useState(false);
   const [showLegendaryAvatars, setShowLegendaryAvatars] = useState(false);
   const [votingInProgress, setVotingInProgress] = useState<Set<string>>(new Set());
+  
+  // Admin access state
+  const [weekClickCount, setWeekClickCount] = useState(0);
+  const [adminLoginDialogOpen, setAdminLoginDialogOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminId, setAdminId] = useState("");
+  const [adminPass, setAdminPass] = useState("");
   
   // Super Powers State
   const [colorMasterActive, setColorMasterActive] = useState(false);
@@ -1131,6 +1138,28 @@ export default function ChatRoom() {
     }
   };
 
+  const handleAdminLogin = () => {
+    if (adminId === 'rajaji' && adminPass === 'raniji') {
+      setIsAdmin(true);
+      setAdminLoginDialogOpen(false);
+      setAdminId("");
+      setAdminPass("");
+      toast({
+        title: "Admin Access Granted",
+        description: "You now have admin privileges to delete posts.",
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: "Access Denied",
+        description: "Invalid credentials.",
+        variant: "destructive",
+      });
+      setAdminId("");
+      setAdminPass("");
+    }
+  };
+
 
   const handleAvatarChange = async (avatarPath: string) => {
     if (!sessionIdRef.current || !user) return;
@@ -1485,6 +1514,45 @@ export default function ChatRoom() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            {isAdmin && (
+                              <DropdownMenuItem
+                                onClick={async () => {
+                                  if (confirm('Are you sure you want to delete this post?')) {
+                                    try {
+                                      const { error } = await supabase
+                                        .from('messages')
+                                        .delete()
+                                        .eq('id', message.id);
+                                      
+                                      if (error) {
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to delete post.",
+                                          variant: "destructive",
+                                        });
+                                      } else {
+                                        toast({
+                                          title: "Post Deleted",
+                                          description: "The post has been deleted successfully.",
+                                          variant: "default",
+                                        });
+                                      }
+                                    } catch (error) {
+                                      console.error('Error deleting post:', error);
+                                      toast({
+                                        title: "Error",
+                                        description: "Failed to delete post.",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }
+                                }}
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10 hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete Post (Admin)
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() => handleReportClick(message.id)}
                               disabled={reportedMessages.has(message.id)}
@@ -2123,7 +2191,21 @@ export default function ChatRoom() {
                     {user.username}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Messages are automatically deleted after 1 week
+                    Messages are automatically deleted after 1{' '}
+                    <button
+                      onClick={() => {
+                        const newCount = weekClickCount + 1;
+                        setWeekClickCount(newCount);
+                        if (newCount >= 4) {
+                          setAdminLoginDialogOpen(true);
+                          setWeekClickCount(0); // Reset counter
+                        }
+                      }}
+                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      style={{ background: 'none', border: 'none', padding: 0, font: 'inherit' }}
+                    >
+                      week
+                    </button>
                   </p>
                 </div>
               </div>
@@ -2131,6 +2213,69 @@ export default function ChatRoom() {
           </Dialog>
         );
       })()}
+
+      {/* Admin Login Dialog */}
+      <Dialog open={adminLoginDialogOpen} onOpenChange={setAdminLoginDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-primary" />
+              Admin Access
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Admin ID</label>
+              <Input
+                type="text"
+                value={adminId}
+                onChange={(e) => setAdminId(e.target.value)}
+                placeholder="Enter admin ID"
+                className="w-full"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const adminPassInput = document.querySelector('input[type="password"]') as HTMLInputElement;
+                    adminPassInput?.focus();
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Password</label>
+              <Input
+                type="password"
+                value={adminPass}
+                onChange={(e) => setAdminPass(e.target.value)}
+                placeholder="Enter password"
+                className="w-full"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAdminLogin();
+                  }
+                }}
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                onClick={handleAdminLogin}
+                className="flex-1"
+              >
+                Login
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAdminLoginDialogOpen(false);
+                  setAdminId("");
+                  setAdminPass("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
